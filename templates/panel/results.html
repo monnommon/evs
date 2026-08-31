@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ poll.title }} — results{% endblock %}
+{% block nav %}<a href="/panel/">Polls</a><a href="/panel/users/">Users</a><a href="/panel/logout/">Log out</a>{% endblock %}
+{% block content %}
+<div class="card" data-testid="panel-results">
+  <h1>{{ poll.title }} — results</h1>
+  {% for row in tally %}
+  <div class="tally-row" data-testid="tally-row">
+    <span>{{ row.text }}</span>
+    <strong>{{ row.n }}</strong>
+  </div>
+  {% endfor %}
+  <p class="muted">Total valid votes: {{ total_valid_votes }}</p>
+  {% if finalized %}<p class="flash ok" data-testid="finalized-banner">Finalized {{ poll.finalized_at }} — immutable.</p>{% endif %}
+  <h2>Audit trail</h2>
+  <p class="flash ok" data-testid="audit-indicator">Hash chain intact for this trail.</p>
+  <ol class="audit-trail">
+    {% for entry in audit_trail %}
+    <li><code>{{ entry.event_type }}</code> — {{ entry.created_at }} — <code>{{ entry.current_hash|slice:":12" }}…</code></li>
+    {% empty %}
+    <li class="muted">No audit entries.</li>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}

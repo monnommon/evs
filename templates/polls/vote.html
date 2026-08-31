@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Vote: {{ poll.title }}{% endblock %}
+{% block content %}
+<div class="card" x-data="evsVote({ pollId: '{{ poll.id }}', multiple: {{ poll.allow_multiple_options|yesno:'true,false' }}, endAtIso: '{{ poll.end_at|date:"c" }}' })">
+  <h1>{{ poll.title }}</h1>
+  {% if poll.description %}<p class="muted">{{ poll.description }}</p>{% endif %}
+  <p class="muted">
+    Closes <span x-text="countdown"></span>
+    (<span>{{ poll.end_at }}</span>)
+  </p>
+  {% if error %}<p class="flash err" data-testid="vote-error">{{ error }}</p>{% endif %}
+  <form method="post" action="/poll/{{ token }}/vote/" id="ballot-form">
+    {% csrf_token %}
+    <input type="hidden" name="fingerprint" id="fingerprint-input" :value="fingerprint">
+    <fieldset>
+      {% for option in options %}
+      <label class="option" data-testid="ballot-option">
+        <input type="{{ poll.allow_multiple_options|yesno:'checkbox,radio' }}" name="option_ids" value="{{ option.id }}"
+               {% if poll.allow_multiple_options %}x-model="selected"{% endif %}>
+        {{ option.text }}
+      </label>
+      {% endfor %}
+    </fieldset>
+    <p x-show="fingerprintReady" class="muted small" style="display:none">Fingerprint ready — your vote is anonymous and one-time.</p>
+    <button type="submit" data-testid="cast-vote">Cast vote</button>
+  </form>
+  <p class="muted small">One vote per link. Your browser fingerprint is stored only as a SHA-256 hash to prevent duplicates.</p>
+</div>
+{% endblock %}

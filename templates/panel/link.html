@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Voting link{% endblock %}
+{% block nav %}<a href="/panel/">Polls</a><a href="/panel/users/">Users</a><a href="/panel/logout/">Log out</a>{% endblock %}
+{% block content %}
+<div class="card" data-testid="generated-link">
+  <h1>Voting link generated</h1>
+  <p>For <strong>{{ poll.title }}</strong>. Share this one-time link with exactly one voter:</p>
+  <p><code class="link-box" id="vote-link">/poll/{{ session.token }}/</code></p>
+  <p class="muted">Expires: {{ session.expires_at }} — one vote per link, one vote per browser (fingerprint dedupe).</p>
+  <p><a class="btn" href="/panel/">Back to dashboard</a></p>
+</div>
+{% endblock %}

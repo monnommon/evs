@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="card" data-testid="error-page">
+  <h1>{{ heading }}</h1>
+  <p class="flash err">{{ message }}</p>
+  <p class="muted">If you think this is a mistake, contact the poll administrator.</p>
+</div>
+{% endblock %}

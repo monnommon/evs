@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Vote confirmed{% endblock %}
+{% block content %}
+<div class="card" data-testid="confirm-page">
+  <h1>Vote confirmed</h1>
+  <p>Thank you — your vote in <strong>{{ poll.title }}</strong> has been recorded{% if vote %} at {{ vote.voted_at }}{% endif %}.</p>
+  <p class="muted">Your vote is sealed in the audit chain and cannot be altered.</p>
+  {% if vote %}
+  <p class="muted">You chose:</p>
+  <ul>
+    {% for option in vote.options.all %}<li>{{ option.text }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

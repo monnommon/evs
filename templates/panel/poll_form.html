@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{% if poll %}Edit{% else %}New{% endif %} poll{% endblock %}
+{% block nav %}<a href="/panel/">Polls</a><a href="/panel/users/">Users</a><a href="/panel/logout/">Log out</a>{% endblock %}
+{% block content %}
+<div class="card" data-testid="poll-form">
+  <h1>{% if poll %}Edit{% else %}New{% endif %} poll</h1>
+  {% if error %}<p class="flash err">{{ error }}</p>{% endif %}
+  <form method="post" action="{% if poll %}/panel/polls/{{ poll.id }}/update/{% else %}/panel/polls/new/create{% endif %}" x-data="evsPollForm">
+    {% csrf_token %}
+    <p><label>Title<br>{{ form.title }}</label></p>
+    <p><label>Description<br>{{ form.description }}</label></p>
+    <p>
+      <label class="option">{{ form.is_anonymous }} Anonymous voting links</label>
+      <label class="option">{{ form.allow_multiple_options }} Allow multiple options</label>
+    </p>
+    <p>
+      <label>Opens at<br>{{ form.start_at }}</label>
+      <label>Closes at<br>{{ form.end_at }}</label>
+    </p>
+    <p><label>Options (one per line)<br>{{ form.options_text }}</label></p>
+    <p><label>Status<br>{{ form.status }}</label></p>
+    <button type="submit" data-testid="save-poll">Save poll</button>
+  </form>
+</div>
+{% endblock %}

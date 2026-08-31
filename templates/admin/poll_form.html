@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Poll form{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>{% if poll %}Edit{% else %}New{% endif %} poll</h1>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+  </form>
+</div>
+{% endblock %}

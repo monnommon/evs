@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ poll.title }} — results{% endblock %}
+{% block content %}
+<div class="card" data-testid="results-page">
+  <h1>{{ poll.title }} — results</h1>
+  {% for row in tally %}
+  <div class="tally-row" data-testid="tally-row">
+    <span>{{ row.text }}</span>
+    <strong>{{ row.n }}</strong>
+  </div>
+  {% endfor %}
+  <p class="muted">Total valid votes: {{ total_valid_votes }}</p>
+  {% if finalized %}<p class="flash ok" data-testid="finalized-banner">Results finalized — immutable.</p>{% endif %}
+  <p class="muted small">Tallies are tied to the append-only audit chain; any tampering breaks verification.</p>
+</div>
+{% endblock %}

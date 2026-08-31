@@ -1,0 +1,32 @@
+/* EVS base styles */
+body { font-family: system-ui, sans-serif; margin: 0; color: #1a1a2e; background: #f6f7fb; }
+.topnav { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1.5rem; background: #16213e; color: #fff; }
+.topnav .brand { color: #fff; font-weight: 700; text-decoration: none; font-size: 1.1rem; }
+.topnav a { color: #cfd8ff; text-decoration: none; margin-left: 0.75rem; }
+.topnav a.active { color: #fff; font-weight: 600; }
+main { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+.card { background: #fff; border-radius: 10px; padding: 1.25rem 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 1rem; }
+button, .btn { background: #0f3460; color: #fff; border: 0; border-radius: 6px; padding: 0.5rem 1rem; cursor: pointer; font-size: 0.95rem; text-decoration: none; display: inline-block; }
+button:hover { background: #16213e; }
+.flash { padding: 0.6rem 1rem; border-radius: 6px; margin: 0.5rem 0; }
+.flash.ok { background: #e6f6ec; color: #14532d; }
+.flash.err { background: #fdecec; color: #7f1d1d; }
+.muted { color: #6b7280; }
+.small { font-size: 0.85rem; }
+.option { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.6rem; border: 1px solid #e5e7eb; border-radius: 6px; margin: 0.35rem 0; cursor: pointer; }
+.option:hover { border-color: #0f3460; }
+.option input { accent-color: #0f3460; }
+fieldset { border: 0; padding: 0; }
+.tally-row { display: flex; justify-content: space-between; padding: 0.4rem 0.6rem; border-bottom: 1px solid #eef1f6; }
+.tally-row strong { font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #eef1f6; font-size: 0.95rem; }
+th { color: #6b7280; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.link-box { display: block; background: #f3f4f8; border: 1px dashed #9aa3b8; border-radius: 6px; padding: 0.6rem 0.8rem; word-break: break-all; font-size: 0.9rem; }
+.audit-trail { font-size: 0.85rem; color: #4b5563; }
+.audit-trail code { background: #f3f4f8; border-radius: 4px; padding: 0.1rem 0.3rem; }
+input[type="text"], input[type="email"], input[type="password"], input[type="datetime-local"], textarea, select {
+  width: 100%; max-width: 420px; padding: 0.45rem 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; font-family: inherit;
+}
+textarea { min-height: 6rem; }
+form p label { display: inline-block; margin-top: 0.35rem; }
