@@ -11,15 +11,19 @@ DEBUG = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 # Production hardening (docker-compose requires SECRET_KEY/DB_PASSWORD/ALLOWED_HOSTS).
-# SECURE_SSL_REDIRECT stays off by default: the bundled nginx terminates plain
-# HTTP; enable it when a TLS proxy sits in front (see README, Security notes).
+# Secure cookies need the site to actually be served over HTTPS: with the
+# bundled plain-HTTP nginx stack they lock browsers out (Secure cookies are
+# never echoed back over http://). Enable SECURE_SSL_REDIRECT when a TLS
+# proxy sits in front — that turns the secure flags on. HSTS is harmless on
+# plain HTTP (browsers ignore the header over http://), so it stays on.
 if not DEBUG:
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false").lower() in ("1", "true", "yes")
+    if SECURE_SSL_REDIRECT:
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
