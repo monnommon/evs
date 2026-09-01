@@ -20,6 +20,9 @@ class Poll(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="polls")
     is_anonymous = models.BooleanField(default=False)
     allow_multiple_options = models.BooleanField(default=False)
+    # Ballot-builder schema (see polls/questions.py). Choice questions map to
+    # Option rows; text/date/info extras live only here. Empty = legacy ballot.
+    questions = models.JSONField(default=list, blank=True)
     results_visibility = models.CharField(
         max_length=10,
         choices=[("public", _("Public")), ("hidden", _("Hidden"))],
@@ -47,6 +50,12 @@ class Poll(models.Model):
     def is_finalized(self):
         return self.finalized_at is not None
 
+    @property
+    def questions_json(self):
+        import json
+
+        return json.dumps(self.questions or [])
+
 
 class Option(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -71,6 +80,9 @@ class Vote(models.Model):
     fingerprint_hash = models.CharField(max_length=64, db_index=True, null=True, blank=True)
     is_valid = models.BooleanField(default=True)
     anonymous_session = models.ForeignKey("polls.AnonymousSession", on_delete=models.SET_NULL, null=True, blank=True, related_name="votes")
+    # Free-form answers keyed by question id (text/textarea/date) — ballot
+    # secrecy: never copied into the audit chain, only into this row.
+    answers = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-voted_at"]

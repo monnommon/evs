@@ -20,6 +20,24 @@
     <div class="field"><label for="{{ form.start_at.id_for_label }}">{% trans "Opens at" %}</label>{{ form.start_at }}{{ form.start_at.errors }}</div>
     <div class="field"><label for="{{ form.end_at.id_for_label }}">{% trans "Closes at" %}</label>{{ form.end_at }}{{ form.end_at.errors }}</div>
     <div class="field field-wide"><label for="{{ form.options_text.id_for_label }}">{% trans "Options (one per line)" %}</label>{{ form.options_text }}{{ form.options_text.errors }}<span class="field-hint js-option-count" data-label="{% trans 'Option count:' %}"></span></div>
+    <div class="field field-wide">
+      <label>{% trans "Additional fields (ballot builder)" %}</label>
+      <span class="field-hint">{% trans "Text, date or info blocks added to the ballot. Choice options come from the list above." %}</span>
+      <div class="js-questions" data-testid="ballot-builder">
+        <textarea name="questions_json" id="questions-json" class="js-questions-json" hidden>{% if poll %}{{ poll.questions_json }}{% endif %}</textarea>
+        <div class="js-questions-list"></div>
+        <div class="actions" style="margin-top:.5rem">
+          <select class="js-qtype" aria-label="{% trans 'Field type' %}">
+            <option value="text">{% trans "Text (one line)" %}</option>
+            <option value="textarea">{% trans "Text (multi-line)" %}</option>
+            <option value="date">{% trans "Date" %}</option>
+            <option value="info">{% trans "Info block" %}</option>
+          </select>
+          <button type="button" class="btn-sm btn-accent js-add-question">{% trans "Add field" %}</button>
+        </div>
+        <p class="flash err js-questions-error" hidden></p>
+      </div>
+    </div>
     <div class="field"><label for="{{ form.status.id_for_label }}">{% trans "Status" %}</label>{{ form.status }}{{ form.status.errors }}</div>
     <div class="form-actions field-wide"><a href="/panel/" class="btn btn-secondary">{% trans "Cancel" %}</a><button type="submit" data-testid="save-poll">{% trans "Save poll" %}</button></div>
   </form>

@@ -67,6 +67,12 @@ table td { vertical-align: middle; }
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin: 0 0 1.25rem; }
 .stat span { color: var(--pico-muted-color); font-size: .78rem; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; }
 
+/* Ballot extra questions */
+.ballot-question { margin: .9rem 0; }
+.ballot-question .req { color: #b4233c; }
+.ballot-info { margin: .9rem 0; padding: .8rem .9rem; border-radius: 9px; background: var(--pico-background-color); border: 1px solid var(--pico-muted-border-color); }
+.ballot-info p { margin: .2rem 0 0; white-space: pre-line; }
+
 /* Ballot options */
 .choice-group { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
 .option { position: relative; display: flex; align-items: center; gap: .72rem; min-height: 52px; padding: .7rem .82rem; border: 1px solid var(--pico-muted-border-color); border-radius: 10px; margin: .48rem 0; cursor: pointer; transition: border .15s, background .15s; }

@@ -24,6 +24,7 @@ from django.views.decorators.http import require_GET, require_POST
 from accounts.models import Role
 from audit.utils import audit_trail, log_event, verify_chain
 from .models import AnonymousSession, Option, Poll, PollStatus
+from .questions import validate_answers, validate_questions
 from .serializers import PollCreateSerializer, PollUpdateSerializer
 
 
@@ -111,6 +112,20 @@ class PollForm(forms.Form):
         return cleaned
 
 
+def _clean_questions(form):
+    """Parse the builder's questions_json; returns (questions, errors)."""
+    import json
+
+    raw = form.cleaned_data.get("questions_json") or (form.data.get("questions_json") if form.data else "")
+    if not raw:
+        return [], []
+    try:
+        parsed = json.loads(raw)
+    except (TypeError, ValueError):
+        return [], [_("Additional fields: invalid JSON.")]
+    return validate_questions(parsed)
+
+
 def _tally_with_percentages(poll):
     tally = list(poll.options.annotate(n=Count("votes", filter=Q(votes__is_valid=True))).values("id", "text", "order", "n"))
     selections = sum(row["n"] for row in tally)
@@ -195,10 +210,15 @@ def panel_poll_create(request):
         }
         serializer = PollCreateSerializer(data=payload)
         if serializer.is_valid():
-            with transaction.atomic():
-                poll = serializer.save(created_by=request.user, status=form.cleaned_data["status"])
-                log_event("poll_created", "Poll", str(poll.id), {"title": poll.title, "is_anonymous": poll.is_anonymous}, created_by=request.user)
-            return redirect("panel-dashboard")
+            questions, q_errors = _clean_questions(form)
+            if q_errors:
+                for e in q_errors:
+                    form.add_error(None, e)
+            else:
+                with transaction.atomic():
+                    poll = serializer.save(created_by=request.user, status=form.cleaned_data["status"], questions=questions)
+                    log_event("poll_created", "Poll", str(poll.id), {"title": poll.title, "is_anonymous": poll.is_anonymous}, created_by=request.user)
+                return redirect("panel-dashboard")
     return render(request, "panel/poll_form.html", {"form": form, "poll": None, "error": _("Check the form fields.")}, status=400)
 
 
@@ -247,8 +267,18 @@ def panel_poll_update(request, poll_id):
         }
         serializer = PollUpdateSerializer(poll, data=data, partial=True)
         if serializer.is_valid():
+            questions, q_errors = _clean_questions(form)
+            if q_errors:
+                for e in q_errors:
+                    form.add_error(None, e)
+                return render(request, "panel/poll_form.html", {"form": form, "poll": poll, "error": _("Check the form fields.")}, status=400)
+            # Answers are keyed by question id — editing the schema mid-vote
+            # would detach already-cast answers from their fields.
+            if poll.votes.exists() and questions != poll.questions:
+                form.add_error(None, _("Additional fields cannot change after votes have been cast."))
+                return render(request, "panel/poll_form.html", {"form": form, "poll": poll, "error": _("Check the form fields.")}, status=400)
             with transaction.atomic():
-                serializer.save()
+                serializer.save(questions=questions)
                 if current_lines != lines:
                     Option.objects.filter(poll=poll).delete()
                     Option.objects.bulk_create([Option(poll=poll, text=t, order=i) for i, t in enumerate(lines)])

@@ -119,5 +119,69 @@
       textarea.addEventListener("input", update);
       update();
     });
+
+    // Ballot builder: additional fields (text/textarea/date/info).
+    document.querySelectorAll(".js-questions").forEach(function (root) {
+      const jsonField = root.querySelector(".js-questions-json");
+      const list = root.querySelector(".js-questions-list");
+      const typeSelect = root.querySelector(".js-qtype");
+      const addBtn = root.querySelector(".js-add-question");
+      const errBox = root.querySelector(".js-questions-error");
+      let questions = [];
+      try { questions = JSON.parse(jsonField.value || "[]"); } catch (_) { questions = []; }
+
+      const typeLabels = { text: "text", textarea: "multi-line text", date: "date", info: "info" };
+
+      const sync = function () { jsonField.value = JSON.stringify(questions); };
+
+      const renderRow = function (q, index) {
+        const row = document.createElement("div");
+        row.className = "js-question-row choice-group";
+        row.style.marginBottom = ".4rem";
+        const isInfo = q.type === "info";
+        row.innerHTML =
+          '<span class="badge">' + typeLabels[q.type] + "</span>" +
+          '<input type="text" class="js-q-label" placeholder="' + (isInfo ? root.dataset.labelHint || "Label (optional)" : "Label") + '" value="' + (q.label || "").replace(/"/g, "&quot;") + '" ' + (isInfo ? "" : "required") + ">" +
+          (isInfo ? '<input type="text" class="js-q-value" placeholder="Info text" value="' + (q.value || "").replace(/"/g, "&quot;") + '">' : '<input type="text" class="js-q-help" placeholder="Hint (optional)" value="' + (q.help || "").replace(/"/g, "&quot;") + '">') +
+          '<label class="option" style="min-height:34px"><input type="checkbox" class="js-q-required"' + (q.required ? " checked" : "") + "> required</label>" +
+          '<button type="button" class="btn-sm btn-danger js-q-up" aria-label="up">↑</button>' +
+          '<button type="button" class="btn-sm btn-danger js-q-down" aria-label="down">↓</button>' +
+          '<button type="button" class="btn-sm btn-danger js-q-del" aria-label="remove">×</button>';
+        row.querySelector(".js-q-label").addEventListener("input", function () { questions[index].label = this.value; sync(); });
+        const helpEl = row.querySelector(".js-q-help");
+        if (helpEl) helpEl.addEventListener("input", function () { questions[index].help = this.value; sync(); });
+        const valueEl = row.querySelector(".js-q-value");
+        if (valueEl) valueEl.addEventListener("input", function () { questions[index].value = this.value; sync(); });
+        row.querySelector(".js-q-required").addEventListener("change", function () { questions[index].required = this.checked; sync(); });
+        row.querySelector(".js-q-del").addEventListener("click", function () { questions.splice(index, 1); renderAll(); });
+        row.querySelector(".js-q-up").addEventListener("click", function () { if (index > 0) { const t = questions[index - 1]; questions[index - 1] = questions[index]; questions[index] = t; renderAll(); } });
+        row.querySelector(".js-q-down").addEventListener("click", function () { if (index < questions.length - 1) { const t = questions[index + 1]; questions[index + 1] = questions[index]; questions[index] = t; renderAll(); } });
+        list.appendChild(row);
+      };
+
+      const renderAll = function () {
+        list.textContent = "";
+        questions.forEach(renderRow);
+        sync();
+        errBox.hidden = true;
+      };
+
+      addBtn.addEventListener("click", function () {
+        questions.push({ id: "q" + (questions.length + 1) + "-" + Date.now().toString(36), type: typeSelect.value, label: "", help: "", required: false, value: "" });
+        renderAll();
+      });
+
+      const form = root.closest("form");
+      form.addEventListener("submit", function () {
+        try {
+          questions = questions.filter(function (q) { return q.type === "info" || q.label.trim(); });
+          sync();
+        } catch (e) {
+          errBox.textContent = "Invalid field definitions.";
+          errBox.hidden = false;
+        }
+      });
+      renderAll();
+    });
   });
 }());

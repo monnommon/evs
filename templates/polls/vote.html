@@ -22,6 +22,26 @@
       </label>
       {% endfor %}
     </fieldset>
+    {% for q in poll.questions %}
+      {% if q.type == "info" %}
+      <div class="ballot-info">
+        {% if q.label %}<strong>{{ q.label }}</strong>{% endif %}
+        <p class="muted small">{{ q.value }}</p>
+      </div>
+      {% else %}
+      <div class="field ballot-question">
+        <label for="answer_{{ q.id }}">{{ q.label }}{% if q.required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+        {% if q.help %}<span class="field-hint">{{ q.help }}</span>{% endif %}
+        {% if q.type == "textarea" %}
+        <textarea name="answer_{{ q.id }}" id="answer_{{ q.id }}" {% if q.required %}required{% endif %}></textarea>
+        {% elif q.type == "date" %}
+        <input type="date" name="answer_{{ q.id }}" id="answer_{{ q.id }}" {% if q.required %}required{% endif %}>
+        {% else %}
+        <input type="text" name="answer_{{ q.id }}" id="answer_{{ q.id }}" {% if q.required %}required{% endif %}>
+        {% endif %}
+      </div>
+      {% endif %}
+    {% endfor %}
     <p class="flash err js-selection-error" hidden>{% trans "Select at least one option." %}</p>
     <p class="privacy-note js-fingerprint-state" role="status">{% trans "Preparing secure ballot…" %}</p>
     <button type="submit" data-testid="cast-vote" disabled>{% trans "Cast vote" %}</button>

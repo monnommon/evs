@@ -4,6 +4,7 @@ command, registration switch, multi-choice percentages."""
 
 import csv
 import io
+import json
 import re
 from datetime import timedelta
 
@@ -13,7 +14,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Role, User
-from polls.models import AnonymousSession, Poll, PollStatus
+from audit.models import AuditLog
+from polls.models import AnonymousSession, Poll, PollStatus, Vote
 
 from .tests_frontend import HTML, make_poll, make_user
 
@@ -90,6 +92,85 @@ class BulkLinkTests(TestCase):
         self.assertEqual(self.poll.anonymous_sessions.count(), 500)
         self.client.post(reverse("panel-generate-link", args=[self.poll.id]), {"count": "garbage"})
         self.assertEqual(self.poll.anonymous_sessions.count(), 501)
+
+
+class BallotBuilderTests(TestCase):
+    """End-to-end: build a poll with extra questions, vote, verify answers
+    land on the Vote row and required validation rejects empty ones."""
+
+    def setUp(self):
+        self.admin = make_user("admin@example.com", Role.Roles.ADMIN)
+        self.client.login(email="admin@example.com", password="passw0rd!")
+        self.questions = [
+            {"id": "name", "type": "text", "label": "Your name", "help": "as in passport", "required": True, "value": ""},
+            {"id": "comment", "type": "textarea", "label": "Comment", "help": "", "required": False, "value": ""},
+            {"id": "when", "type": "date", "label": "Available from", "help": "", "required": False, "value": ""},
+            {"id": "note", "type": "info", "label": "", "help": "", "required": False, "value": "Your data stays private."},
+        ]
+
+    def _create_poll(self):
+        poll = make_poll(self.admin, is_anonymous=True, with_options=True)
+        poll.questions = self.questions
+        poll.save(update_fields=["questions"])
+        return poll
+
+    def test_ballot_renders_extra_fields(self):
+        poll = self._create_poll()
+        session = AnonymousSession.objects.create_session(poll)
+        resp = self.client.get(reverse("poll-by-token", args=[session.token]), **HTML)
+        self.assertContains(resp, 'name="answer_name"')
+        self.assertContains(resp, 'name="answer_comment"')
+        self.assertContains(resp, 'type="date"')
+        self.assertContains(resp, "Your data stays private.")
+        self.assertContains(resp, "as in passport")
+
+    def test_required_answer_missing_rejected(self):
+        poll = self._create_poll()
+        session = AnonymousSession.objects.create_session(poll)
+        resp = self.client.post(
+            reverse("poll-anon-vote", args=[session.token]),
+            {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp1", "answer_name": ""},
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(Vote.objects.filter(poll=poll).exists())
+
+    def test_vote_stores_answers(self):
+        poll = self._create_poll()
+        session = AnonymousSession.objects.create_session(poll)
+        resp = self.client.post(
+            reverse("poll-anon-vote", args=[session.token]),
+            {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp1", "answer_name": "Иван", "answer_comment": "ok", "answer_when": "2026-09-15"},
+        )
+        self.assertEqual(resp.status_code, 302, resp.content)
+        vote = Vote.objects.get(poll=poll)
+        self.assertEqual(vote.answers["name"], "Иван")
+        self.assertEqual(vote.answers["comment"], "ok")
+        self.assertEqual(vote.answers["when"], "2026-09-15")
+
+    def test_answers_never_enter_audit_chain(self):
+        poll = self._create_poll()
+        session = AnonymousSession.objects.create_session(poll)
+        self.client.post(reverse("poll-anon-vote", args=[session.token]), {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp1", "answer_name": "SECRET-VALUE"})
+        for entry in AuditLog.objects.all():
+            self.assertNotIn("SECRET-VALUE", str(entry.data))
+
+    def test_questions_locked_after_votes(self):
+        poll = self._create_poll()
+        session = AnonymousSession.objects.create_session(poll)
+        self.client.post(reverse("poll-anon-vote", args=[session.token]), {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp1", "answer_name": "x"})
+        changed = self.questions[:-1]  # drop the info block
+        resp = self.client.post(
+            reverse("panel-poll-update", args=[poll.id]),
+            {
+                "title": poll.title, "description": "", "is_anonymous": "on", "results_visibility": "public",
+                "start_at": poll.start_at.strftime("%Y-%m-%dT%H:%M"), "end_at": poll.end_at.strftime("%Y-%m-%dT%H:%M"),
+                "options_text": "\n".join(o.text for o in poll.options.all()), "status": "active",
+                "questions_json": json.dumps(changed),
+            },
+        )
+        self.assertEqual(resp.status_code, 400)
+        poll.refresh_from_db()
+        self.assertEqual(len(poll.questions), 4)
 
 
 class ResultsVisibilityTests(TestCase):
