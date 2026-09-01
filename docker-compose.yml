@@ -15,9 +15,16 @@ services:
   web:
     build: .
     command: >
-      sh -c "python manage.py migrate --noinput &&
+      sh -c "mkdir -p /app/staticfiles &&
+             python manage.py migrate --noinput &&
              python manage.py collectstatic --noinput &&
              gunicorn evs.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/admin/login/', timeout=5).status < 500 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     environment:
       DATABASE_URL: postgresql://evs:${DB_PASSWORD:-evsdev}@db:5432/evs
       SECRET_KEY: ${SECRET_KEY:-django-insecure-change-me-in-prod}

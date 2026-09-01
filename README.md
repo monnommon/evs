@@ -246,7 +246,8 @@ view-level login regression tests).
 |---|---|
 | `Permission denied (publickey)` on clone | Use HTTPS clone or add your SSH key to GitHub. |
 | `docker compose up` fails on `db` healthcheck | Check `DB_PASSWORD` is set consistently; wipe with `docker compose down -v` and retry. |
-| 502 from nginx | `web` container still booting (migrations run first) — check `docker compose logs web`. |
+| 502 from nginx | `web` container still booting (migrations run first) or crashed — check `docker compose logs web` and `docker compose ps` (web should show `healthy`). |
+| `web` exits right after start | Usually static-volume permissions: wipe the old volume (`docker compose down -v`) and `docker compose up --build` again — the image now pre-creates `/app/staticfiles` owned by the app user. |
 | Password-reset mails not arriving | `EMAIL_BACKEND` still console; switch to SMTP (see config reference). |
 | `bad request (400)` on pages behind a domain | `ALLOWED_HOSTS` doesn't include your domain — restart with it set. |
 | Static files 404 | `collectstatic` runs on boot in Docker; locally run `python manage.py collectstatic`. |
