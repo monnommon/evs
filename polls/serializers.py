@@ -70,6 +70,32 @@ class PollCreateSerializer(serializers.ModelSerializer):
         return data
 
 
+class PollUpdateSerializer(serializers.ModelSerializer):
+    """Admin-only mutable fields; closing still goes through finalize."""
+
+    class Meta:
+        model = Poll
+        fields = ["title", "description", "is_anonymous", "allow_multiple_options", "start_at", "end_at", "status"]
+
+    def validate_status(self, value):
+        if value not in ("draft", "active"):
+            raise serializers.ValidationError("Use the finalize endpoint to close a poll.")
+        return value
+
+    def validate(self, data):
+        start_at = data.get("start_at", self.instance.start_at)
+        end_at = data.get("end_at", self.instance.end_at)
+        if end_at <= start_at:
+            raise serializers.ValidationError("end_at must be after start_at.")
+        if self.instance.votes.exists():
+            for field in ("is_anonymous", "allow_multiple_options"):
+                if field in data and data[field] != getattr(self.instance, field):
+                    raise serializers.ValidationError({field: "This setting cannot change after voting has started."})
+        if self.instance.anonymous_sessions.exists() and data.get("is_anonymous", self.instance.is_anonymous) != self.instance.is_anonymous:
+            raise serializers.ValidationError({"is_anonymous": "Voting mode cannot change after anonymous links have been generated."})
+        return data
+
+
 class VoteSerializer(serializers.Serializer):
     option_ids = serializers.ListField(child=serializers.UUIDField(), allow_empty=False)
 

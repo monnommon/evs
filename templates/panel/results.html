@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% block title %}{{ poll.title }} — {% trans "results" %}{% endblock %}
-{% block nav %}<a href="/panel/">{% trans "Polls" %}</a><a href="/panel/users/">{% trans "Users" %}</a><a href="/panel/logout/">{% trans "Log out" %}</a>{% endblock %}
+{% block nav %}<a href="/panel/">{% trans "Polls" %}</a>{% if can_manage %}<a href="/panel/users/">{% trans "Users" %}</a>{% endif %}<a href="/panel/logout/">{% trans "Log out" %}</a>{% endblock %}
 {% block content %}
 <div class="card" data-testid="panel-results">
+  <p class="eyebrow">{% trans "Live tally" %}</p>
   <h1>{{ poll.title }} — {% trans "results" %}</h1>
   {% for row in tally %}
-  <div class="tally-row" data-testid="tally-row">
-    <span>{{ row.text }}</span>
-    <strong>{{ row.n }}</strong>
+  <div class="tally-item" data-testid="tally-row">
+    <div class="tally-row"><span>{{ row.text }}</span><strong>{{ row.n }} <small>({{ row.percent }}%)</small></strong></div>
+    <div class="tally-track"><span style="width: {{ row.percent }}%"></span></div>
   </div>
   {% endfor %}
   <p class="muted">{% trans "Total valid votes:" %} {{ total_valid_votes }}</p>

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 
 from .models import Role, User
 
@@ -11,6 +12,10 @@ class RegisterSerializer(serializers.Serializer):
         value = value.lower().strip()
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
+    def validate_password(self, value):
+        validate_password(value)
         return value
 
     def save(self):

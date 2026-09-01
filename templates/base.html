@@ -1,18 +1,18 @@
-{% load i18n %}<!DOCTYPE html>
+{% load i18n static %}<!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
 <html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="utf-8">
   <title>{% block title %}EVS{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="/static/css/style.css">
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
-  <script src="/static/js/alpine-components.js"></script>
+  <meta name="theme-color" content="#101c3b">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <script defer src="{% static 'js/alpine-components.js' %}"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">{% trans "Skip to content" %}</a>
   <nav class="topnav">
-    <a href="/" class="brand">EVS</a>
+    <a href="/" class="brand"><span class="brand-mark" aria-hidden="true">✓</span><span>EVS</span></a>
     <div id="nav-links">
       {% block nav %}
       <a href="/panel/">{% trans "Admin panel" %}</a>
@@ -26,7 +26,7 @@
       <button type="submit" name="language" value="en" class="lang-btn{% if LANGUAGE_CODE == 'en' %} active{% endif %}">EN</button>
     </form>
   </nav>
-  <main>
+  <main id="main-content">
     {% block content %}{% endblock %}
   </main>
 </body>

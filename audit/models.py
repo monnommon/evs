@@ -17,6 +17,7 @@ class AuditLog(models.Model):
         "user_registered",
         "user_logout",
         "password_reset_requested",
+        "password_reset_completed",
         "poll_created",
         "poll_updated",
         "poll_status_changed",

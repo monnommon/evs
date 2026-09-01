@@ -1,5 +1,3 @@
-import secrets
-
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
@@ -15,8 +13,7 @@ from polls.serializers import (
     PollCreateSerializer,
     PollResultsSerializer,
     PollSerializer,
-    VoteResultSerializer,
-    VoteSerializer,
+    PollUpdateSerializer,
 )
 
 
@@ -68,7 +65,7 @@ class AdminPollDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Response({"detail": "Poll is finalized and immutable."}, status=status.HTTP_409_CONFLICT)
         mutable_fields = {"title", "description", "start_at", "end_at", "is_anonymous", "allow_multiple_options", "status"}
         data = {k: v for k, v in request.data.items() if k in mutable_fields}
-        serializer = self.get_serializer(poll, data=data, partial=True)
+        serializer = PollUpdateSerializer(poll, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         old_status = poll.status
         serializer.save()
@@ -99,10 +96,10 @@ class AdminFinalizePollView(views.APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request, pk):
-        poll = generics.get_object_or_404(Poll, pk=pk)
-        if poll.is_finalized:
-            return Response({"detail": "Poll already finalized."}, status=status.HTTP_409_CONFLICT)
         with transaction.atomic():
+            poll = generics.get_object_or_404(Poll.objects.select_for_update(), pk=pk)
+            if poll.is_finalized:
+                return Response({"detail": "Poll already finalized."}, status=status.HTTP_409_CONFLICT)
             poll.status = PollStatus.CLOSED
             poll.finalized_at = timezone.now()
             poll.save(update_fields=["status", "finalized_at"])
@@ -162,6 +159,8 @@ class AdminGenerateLinkView(views.APIView):
         poll = generics.get_object_or_404(Poll, pk=pk)
         if not poll.is_anonymous:
             return Response({"detail": "Links can only be generated for anonymous polls."}, status=status.HTTP_400_BAD_REQUEST)
+        if poll.is_finalized or not poll.is_open:
+            return Response({"detail": "Links can only be generated while the poll is open."}, status=status.HTTP_409_CONFLICT)
         session = AnonymousSession.objects.create_session(poll, ttl_hours=request.data.get("ttl_hours"))
         log_event("session_generated", "Poll", str(poll.id), {"session_id": str(session.id), "expires_at": session.expires_at.isoformat()}, created_by=request.user)
         return Response(AnonymousSessionSerializer(session, context={"request": request}).data, status=status.HTTP_201_CREATED)

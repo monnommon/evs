@@ -2,29 +2,31 @@
 {% load i18n %}
 {% block title %}{% trans "Vote:" %} {{ poll.title }}{% endblock %}
 {% block content %}
-<div class="card" x-data="evsVote({ pollId: '{{ poll.id }}', multiple: {{ poll.allow_multiple_options|yesno:'true,false' }}, endAtIso: '{{ poll.end_at|date:"c" }}' })">
+<div class="card ballot-card js-vote" data-end-at="{{ poll.end_at|date:'c' }}" data-multiple="{{ poll.allow_multiple_options|yesno:'true,false' }}" data-ready="{% trans 'Fingerprint ready — your vote is anonymous and one-time.' %}" data-closed="{% trans 'closed' %}" data-failed="{% trans 'Could not prepare this ballot. Reload the page to try again.' %}" data-recording="{% trans 'Recording…' %}">
+  <div class="ballot-header"><span class="secure-mark" aria-hidden="true">✓</span><span>{% trans "Secure ballot" %}</span></div>
   <h1>{{ poll.title }}</h1>
   {% if poll.description %}<p class="muted">{{ poll.description }}</p>{% endif %}
-  <p class="muted">
-    {% trans "Closes" %} <span x-text="countdown"></span>
-    (<span>{{ poll.end_at }}</span>)
+  <p class="deadline">
+    <span>{% trans "Closes in" %}</span> <strong class="js-countdown">—</strong>
+    <span class="muted small">{{ poll.end_at }}</span>
   </p>
   {% if error %}<p class="flash err" data-testid="vote-error">{{ error }}</p>{% endif %}
   <form method="post" action="/poll/{{ token }}/vote/" id="ballot-form">
     {% csrf_token %}
-    <input type="hidden" name="fingerprint" id="fingerprint-input" :value="fingerprint">
-    <fieldset>
+    <input type="hidden" name="fingerprint" id="fingerprint-input">
+    <fieldset><legend>{% if poll.allow_multiple_options %}{% trans "Select one or more options" %}{% else %}{% trans "Select one option" %}{% endif %}</legend>
       {% for option in options %}
       <label class="option" data-testid="ballot-option">
-        <input type="{{ poll.allow_multiple_options|yesno:'checkbox,radio' }}" name="option_ids" value="{{ option.id }}"
-               {% if poll.allow_multiple_options %}x-model="selected"{% endif %}>
-        {{ option.text }}
+        <input type="{{ poll.allow_multiple_options|yesno:'checkbox,radio' }}" name="option_ids" value="{{ option.id }}" {% if not poll.allow_multiple_options %}required{% endif %}>
+        <span>{{ option.text }}</span><span class="option-check" aria-hidden="true">✓</span>
       </label>
       {% endfor %}
     </fieldset>
-    <p x-show="fingerprintReady" class="muted small" style="display:none">{% trans "Fingerprint ready — your vote is anonymous and one-time." %}</p>
-    <button type="submit" data-testid="cast-vote">{% trans "Cast vote" %}</button>
+    <p class="flash err js-selection-error" hidden>{% trans "Select at least one option." %}</p>
+    <p class="privacy-note js-fingerprint-state" role="status">{% trans "Preparing secure ballot…" %}</p>
+    <button type="submit" data-testid="cast-vote" disabled>{% trans "Cast vote" %}</button>
   </form>
-  <p class="muted small">{% trans "One vote per link. Your browser fingerprint is stored only as a SHA-256 hash to prevent duplicates." %}</p>
+  <p class="muted small privacy-copy">{% trans "One vote per link. Your browser fingerprint is stored only as a SHA-256 hash to prevent duplicates." %}</p>
+  <noscript><p class="flash err">{% trans "JavaScript is required to prepare this anonymous ballot." %}</p></noscript>
 </div>
 {% endblock %}

@@ -112,6 +112,8 @@ class LanguageSwitcherTests(TestCase):
         self.client.post("/i18n/setlang/", {"language": "ru", "next": "/"})
         resp = self.client.get(reverse("poll-by-token", args=[self.session.token]), **HTML)
         self.assertContains(resp, "Проголосовать")
+        self.assertContains(resp, "Защищённый бюллетень")
+        self.assertContains(resp, "До окончания")
         # a second request, no switch in between: still Russian
         resp = self.client.get(reverse("poll-by-token", args=[self.session.token]), **HTML)
         self.assertContains(resp, "Проголосовать")

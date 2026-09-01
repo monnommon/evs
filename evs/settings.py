@@ -74,7 +74,12 @@ def parse_database_url(url):
             }
         )
     elif parsed.scheme == "sqlite":
-        options.update({"ENGINE": "django.db.backends.sqlite3", "NAME": parsed.path.lstrip("/")})
+        # sqlite:///relative.db is relative; sqlite:////absolute/path.db keeps
+        # its leading slash. Stripping every slash silently redirected an
+        # explicitly absolute database into the project directory.
+        sqlite_path = unquote(parsed.path)
+        name = sqlite_path[1:] if sqlite_path.startswith("//") else sqlite_path.lstrip("/")
+        options.update({"ENGINE": "django.db.backends.sqlite3", "NAME": name})
     else:
         raise ValueError(f"Unsupported DATABASE_URL scheme: {parsed.scheme}")
     return options

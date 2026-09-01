@@ -4,13 +4,14 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 class PollStatus(models.TextChoices):
-    DRAFT = "draft"
-    ACTIVE = "active"
-    CLOSED = "closed"
-    ARCHIVED = "archived"
+    DRAFT = "draft", _("Draft")
+    ACTIVE = "active", _("Active")
+    CLOSED = "closed", _("Closed")
+    ARCHIVED = "archived", _("Archived")
 
 
 class Poll(models.Model):
@@ -73,6 +74,8 @@ class Vote(models.Model):
             models.UniqueConstraint(fields=["poll", "user"], condition=models.Q(user__isnull=False), name="uniq_vote_per_user_per_poll"),
             # One vote per fingerprint per poll (anonymous voting)
             models.UniqueConstraint(fields=["poll", "fingerprint_hash"], condition=models.Q(fingerprint_hash__isnull=False), name="uniq_vote_per_fingerprint_per_poll"),
+            # A one-time link must remain one-time even when two requests race.
+            models.UniqueConstraint(fields=["anonymous_session"], condition=models.Q(anonymous_session__isnull=False), name="uniq_vote_per_anonymous_session"),
         ]
 
     def __str__(self):

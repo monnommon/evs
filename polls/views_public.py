@@ -1,8 +1,6 @@
 import hashlib
-import hmac
 
-from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -12,7 +10,6 @@ from rest_framework.response import Response
 from audit.utils import log_event
 from .models import AnonymousSession, Option, Poll, PollStatus, Vote
 from .serializers import PollSerializer, VoteResultSerializer, VoteSerializer
-from .views_admin import AdminOrResultsViewer
 
 
 def _cast_vote(poll, user, option_ids, fingerprint_hash=None, anonymous_session=None):
@@ -46,6 +43,8 @@ def _is_form_post(request):
 
 def _anon_vote_error(session, poll, now):
     """Shared refusal checks for anonymous voting (JSON API and HTML form)."""
+    if not poll.is_anonymous:
+        return (_("This poll no longer accepts anonymous voting."), status.HTTP_409_CONFLICT)
     if session.is_expired or poll.end_at < now:
         return (_("This voting link has expired."), status.HTTP_410_GONE)
     if poll.is_finalized:
@@ -86,6 +85,14 @@ class PollByTokenView(views.APIView):
         if _wants_html(request):
             if session.used:
                 return redirect("poll-anon-confirm", token=token)
+            err = _anon_vote_error(session, poll, timezone.now())
+            if err is not None:
+                return render(
+                    request,
+                    "polls/error.html",
+                    {"heading": _("Voting unavailable"), "message": err[0]},
+                    status=err[1],
+                )
             return _render_ballot(request, poll, session, token, None, 200)
         return Response(
             {
@@ -148,11 +155,31 @@ class AnonymousVoteView(views.APIView):
                 return _render_ballot(request, poll, session, token, msg, status.HTTP_400_BAD_REQUEST)
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
         option_ids = serializer.validated_data["option_ids"]
-        with transaction.atomic():
-            session.used = True
-            session.fingerprint = fingerprint_hash
-            session.save(update_fields=["used", "fingerprint"])
-            vote = _cast_vote(poll, None, option_ids, fingerprint_hash=fingerprint_hash, anonymous_session=session)
+        try:
+            with transaction.atomic():
+                # Re-read and lock the link after all client input is validated.
+                # The DB constraint is the final guard on databases where row
+                # locking is limited (notably SQLite in development).
+                session = AnonymousSession.objects.select_for_update().select_related("poll").get(pk=session.pk)
+                err = _anon_vote_error(session, session.poll, timezone.now())
+                if err is not None:
+                    if html:
+                        return _render_ballot(request, poll, session, token, err[0], err[1])
+                    return Response({"detail": err[0]}, status=err[1])
+                if Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
+                    msg = _("A vote with this browser already exists.")
+                    if html:
+                        return _render_ballot(request, poll, session, token, msg, status.HTTP_409_CONFLICT)
+                    return Response({"detail": msg}, status=status.HTTP_409_CONFLICT)
+                session.used = True
+                session.fingerprint = fingerprint_hash
+                session.save(update_fields=["used", "fingerprint"])
+                vote = _cast_vote(poll, None, option_ids, fingerprint_hash=fingerprint_hash, anonymous_session=session)
+        except IntegrityError:
+            msg = _("This link has already been used or this browser has already voted.")
+            if html:
+                return _render_ballot(request, poll, session, token, msg, status.HTTP_409_CONFLICT)
+            return Response({"detail": msg}, status=status.HTTP_409_CONFLICT)
         if html:
             return redirect("poll-anon-confirm", token=token)
         return Response(
@@ -242,8 +269,11 @@ class AuthenticatedVoteView(views.APIView):
         serializer = VoteSerializer(data=request.data, context={"poll": poll})
         serializer.is_valid(raise_exception=True)
         option_ids = serializer.validated_data["option_ids"]
-        with transaction.atomic():
-            vote = _cast_vote(poll, request.user, option_ids)
+        try:
+            with transaction.atomic():
+                vote = _cast_vote(poll, request.user, option_ids)
+        except IntegrityError:
+            return Response({"detail": "You have already voted in this poll."}, status=status.HTTP_409_CONFLICT)
         return Response(VoteResultSerializer(vote).data, status=status.HTTP_201_CREATED)
 
 

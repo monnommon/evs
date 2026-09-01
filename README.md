@@ -192,7 +192,8 @@ URLs return JSON when the client sends `Accept: application/json`
 (dual-mode views).
 
 **Auth** (`/api/auth/…`): `register/`, `login/`, `logout/`
-(refresh-token blacklist), `password-reset/`, `token/refresh/`, `me/`.
+(refresh-token blacklist), `password-reset/`, `password-reset/confirm/`,
+`token/refresh/`, `me/`.
 SimpleJWT: 15-min access / 7-day refresh tokens.
 
 **Admin** (`/api/admin/…`, requires Admin role): `polls/` CRUD,
@@ -227,7 +228,7 @@ per fingerprint per poll, one vote per link), `GET /poll/{token}/confirm/`.
 
 ```bash
 # local venv
-python manage.py test               # full suite (41 tests)
+python manage.py test               # full suite (62 tests)
 
 # docker
 docker compose exec web python manage.py test

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EVS 0.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-01 11:04+0300\n"
+"POT-Creation-Date: 2026-09-01 09:51+0000\n"
 "PO-Revision-Date: 2026-09-01 11:04+0300\n"
 "Last-Translator: EVS team\n"
 "Language-Team: ru\n"
@@ -19,99 +19,156 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: evs/settings.py:117
+#: evs/settings.py:123
 msgid "Russian"
 msgstr "Русский"
 
-#: evs/settings.py:118
+#: evs/settings.py:124
 msgid "English"
 msgstr "Английский"
 
-#: polls/views_pages.py:45
+#: polls/models.py:11
+msgid "Draft"
+msgstr "Черновик"
+
+#: polls/models.py:12
+msgid "Active"
+msgstr "Активен"
+
+#: polls/models.py:13
+msgid "Closed"
+msgstr "Закрыт"
+
+#: polls/models.py:14
+msgid "Archived"
+msgstr "В архиве"
+
+#: polls/views_pages.py:42
 msgid "Not available"
 msgstr "Недоступно"
 
-#: polls/views_pages.py:45
+#: polls/views_pages.py:42
 msgid "Results are available after the poll closes."
 msgstr "Результаты станут доступны после завершения опроса."
 
-#: polls/views_pages.py:76
+#: polls/views_pages.py:73
 msgid "Invalid credentials or insufficient role."
 msgstr "Неверные учётные данные или недостаточная роль."
 
-#: polls/views_pages.py:93
+#: polls/views_pages.py:90
 msgid "One option per line."
 msgstr "Один вариант на строку."
 
-#: polls/views_pages.py:99
+#: polls/views_pages.py:96
 msgid "A poll needs at least two options."
 msgstr "Опрос должен содержать минимум два варианта."
 
-#: polls/views_pages.py:159 polls/views_pages.py:198
+#: polls/views_pages.py:103
+msgid "Closing time must be after opening time."
+msgstr "Время окончания должно быть позже времени начала."
+
+#: polls/views_pages.py:181 polls/views_pages.py:213 polls/views_pages.py:216
+#: polls/views_pages.py:239
 msgid "Check the form fields."
 msgstr "Проверьте поля формы."
 
-#: polls/views_pages.py:178
+#: polls/views_pages.py:200
 msgid "Immutable"
 msgstr "Неизменяемо"
 
-#: polls/views_pages.py:178
+#: polls/views_pages.py:200
 msgid "Poll is finalized and immutable."
 msgstr "Опрос завершён и не подлежит изменению."
 
-#: polls/views_pages.py:223
+#: polls/views_pages.py:207
+msgid "Options cannot change after votes have been cast."
+msgstr "После появления голосов варианты изменять нельзя."
+
+#: polls/views_pages.py:209
+msgid "Voting mode cannot change after votes have been cast."
+msgstr "После появления голосов режим голосования изменять нельзя."
+
+#: polls/views_pages.py:211
+msgid "Selection rules cannot change after votes have been cast."
+msgstr "После появления голосов правила выбора изменять нельзя."
+
+#: polls/views_pages.py:215
+msgid "Voting mode cannot change after anonymous links have been generated."
+msgstr "После создания анонимных ссылок режим голосования изменять нельзя."
+
+#: polls/views_pages.py:264
 msgid "Not anonymous"
 msgstr "Не анонимный"
 
-#: polls/views_pages.py:223
+#: polls/views_pages.py:264
 msgid "Links can only be generated for anonymous polls."
 msgstr "Ссылки можно создавать только для анонимных опросов."
 
-#: polls/views_pages.py:249
+#: polls/views_pages.py:266 polls/views_public.py:93
+msgid "Voting unavailable"
+msgstr "Голосование недоступно"
+
+#: polls/views_pages.py:266
+msgid "Links can only be generated while the poll is open."
+msgstr "Ссылки можно создавать только пока опрос открыт."
+
+#: polls/views_pages.py:293
 msgid "Cannot delete"
 msgstr "Удаление невозможно"
 
-#: polls/views_pages.py:249
+#: polls/views_pages.py:293
 msgid "Poll with votes or finalized results cannot be deleted."
 msgstr "Опрос с голосами или завершёнными результатами удалить нельзя."
 
-#: polls/views_public.py:50 polls/views_public.py:84
+#: polls/views_public.py:47
+msgid "This poll no longer accepts anonymous voting."
+msgstr "Этот опрос больше не принимает анонимные голоса."
+
+#: polls/views_public.py:49 polls/views_public.py:83
 msgid "This voting link has expired."
 msgstr "Срок действия этой ссылки для голосования истёк."
 
-#: polls/views_public.py:52
+#: polls/views_public.py:51
 msgid "Poll is finalized; no more votes."
 msgstr "Опрос завершён; голосование окончено."
 
-#: polls/views_public.py:54
+#: polls/views_public.py:53
 msgid "Poll is not open for voting."
 msgstr "Опрос не открыт для голосования."
 
-#: polls/views_public.py:56
+#: polls/views_public.py:55
 msgid "This link has already been used."
 msgstr "Эта ссылка уже была использована."
 
-#: polls/views_public.py:79 polls/views_public.py:116 polls/views_public.py:177
+#: polls/views_public.py:78 polls/views_public.py:123 polls/views_public.py:204
 msgid "Link not found"
 msgstr "Ссылка не найдена"
 
-#: polls/views_public.py:79 polls/views_public.py:116 polls/views_public.py:177
+#: polls/views_public.py:78 polls/views_public.py:123 polls/views_public.py:204
 msgid "Invalid voting link."
 msgstr "Недействительная ссылка для голосования."
 
-#: polls/views_public.py:84
+#: polls/views_public.py:83
 msgid "Link expired"
 msgstr "Ссылка истекла"
 
-#: polls/views_public.py:133
+#: polls/views_public.py:140
 msgid "Browser fingerprint is required for anonymous voting."
 msgstr "Для анонимного голосования необходим отпечаток браузера."
 
-#: polls/views_public.py:139
+#: polls/views_public.py:146 polls/views_public.py:170
 msgid "A vote with this browser already exists."
 msgstr "Голос с этого браузера уже существует."
 
-#: templates/base.html:18 templates/panel/login.html:6
+#: polls/views_public.py:179
+msgid "This link has already been used or this browser has already voted."
+msgstr "Эта ссылка уже использована или с этого браузера уже голосовали."
+
+#: templates/base.html:13
+msgid "Skip to content"
+msgstr "Перейти к содержимому"
+
+#: templates/base.html:18 templates/panel/login.html:7
 msgid "Admin panel"
 msgstr "Панель администратора"
 
@@ -137,16 +194,32 @@ msgstr "Пользователи"
 msgid "Log out"
 msgstr "Выйти"
 
-#: templates/panel/dashboard.html:13 templates/panel/poll_form.html:3
-#: templates/panel/poll_form.html:7
+#: templates/panel/dashboard.html:12
+msgid "Control center"
+msgstr "Центр управления"
+
+#: templates/panel/dashboard.html:14 templates/panel/poll_form.html:3
+#: templates/panel/poll_form.html:8
 msgid "New poll"
 msgstr "Новый опрос"
 
-#: templates/panel/dashboard.html:16
+#: templates/panel/dashboard.html:18
+msgid "Total polls"
+msgstr "Всего опросов"
+
+#: templates/panel/dashboard.html:19
+msgid "Active now"
+msgstr "Сейчас активны"
+
+#: templates/panel/dashboard.html:20
+msgid "Votes recorded"
+msgstr "Голосов принято"
+
+#: templates/panel/dashboard.html:23
 msgid "Audit chain verified — all entries intact."
 msgstr "Цепочка аудита верифицирована — все записи целы."
 
-#: templates/panel/dashboard.html:18
+#: templates/panel/dashboard.html:25
 #, python-format
 msgid "Audit chain BROKEN — 1 problem detected."
 msgid_plural "Audit chain BROKEN — %(counter)s problems detected."
@@ -155,57 +228,66 @@ msgstr[1] "Обнаружено нарушение цепочки аудита �
 msgstr[2] "Обнаружено нарушение цепочки аудита — %(counter)s проблем."
 msgstr[3] "Обнаружено нарушение цепочки аудита — %(counter)s проблемы."
 
-#: templates/panel/dashboard.html:21 templates/panel/poll_form.html:11
+#: templates/panel/dashboard.html:28 templates/panel/poll_form.html:12
 msgid "Title"
 msgstr "Название"
 
-#: templates/panel/dashboard.html:21 templates/panel/poll_form.html:22
+#: templates/panel/dashboard.html:28 templates/panel/poll_form.html:22
 msgid "Status"
 msgstr "Статус"
 
-#: templates/panel/dashboard.html:21
+#: templates/panel/dashboard.html:28
 msgid "Anonymous"
 msgstr "Анонимный"
 
-#: templates/panel/dashboard.html:21
+#: templates/panel/dashboard.html:28
 msgid "Ends"
 msgstr "Окончание"
 
-#: templates/panel/dashboard.html:21
+#: templates/panel/dashboard.html:28
 msgid "Links"
 msgstr "Ссылки"
 
-#: templates/panel/dashboard.html:21
+#: templates/panel/dashboard.html:28
 msgid "Actions"
 msgstr "Действия"
 
-#: templates/panel/dashboard.html:26
+#: templates/panel/dashboard.html:32
+msgid "votes"
+msgstr "голосов"
+
+#: templates/panel/dashboard.html:33
 msgid "finalized"
 msgstr "завершён"
 
-#: templates/panel/dashboard.html:27
+#: templates/panel/dashboard.html:34
 msgid "yes,no"
 msgstr "да,нет"
 
-#: templates/panel/dashboard.html:31
+#: templates/panel/dashboard.html:38
 msgid "edit"
 msgstr "изменить"
 
-#: templates/panel/dashboard.html:32 templates/panel/results.html:3
-#: templates/panel/results.html:7 templates/polls/results.html:3
-#: templates/polls/results.html:6
+#: templates/panel/dashboard.html:39 templates/panel/results.html:3
+#: templates/panel/results.html:8 templates/polls/results.html:3
+#: templates/polls/results.html:7
 msgid "results"
 msgstr "результаты"
 
-#: templates/panel/dashboard.html:35
+#: templates/panel/dashboard.html:42
+msgid "Finalize this poll? Voting will stop and results will become immutable."
+msgstr ""
+"Завершить опрос? Голосование остановится, а результаты станут неизменяемыми."
+
+#: templates/panel/dashboard.html:42
 msgid "finalize"
 msgstr "завершить"
 
-#: templates/panel/dashboard.html:40
+#: templates/panel/dashboard.html:47
 msgid "generate link"
 msgstr "создать ссылку"
 
-#: templates/panel/dashboard.html:46
+#: templates/panel/dashboard.html:53
 msgid "No polls yet — create the first one."
 msgstr "Опросов пока нет — создайте первый."
 
@@ -213,25 +295,41 @@ msgstr "Опросов пока нет — создайте первый."
 msgid "Voting link"
 msgstr "Ссылка для голосования"
 
-#: templates/panel/link.html:7
+#: templates/panel/link.html:8
 msgid "Voting link generated"
 msgstr "Ссылка для голосования создана"
 
-#: templates/panel/link.html:8
+#: templates/panel/link.html:9
 #, python-format
 msgid ""
 "For <strong>%(title)s</strong>. Share this one-time link with exactly one "
 "voter:"
-msgstr "Для опроса <strong>%(title)s</strong>. Передайте эту одноразовую ссылку ровно одному избирателю:"
+msgstr ""
+"Для опроса <strong>%(title)s</strong>. Передайте эту одноразовую ссылку "
+"ровно одному избирателю:"
 
 #: templates/panel/link.html:10
+msgid "Link copied."
+msgstr "Ссылка скопирована."
+
+#: templates/panel/link.html:10
+msgid "Link selected — press Ctrl+C to copy."
+msgstr "Ссылка выделена — нажмите Ctrl+C, чтобы скопировать."
+
+#: templates/panel/link.html:10
+msgid "Copy"
+msgstr "Копировать"
+
+#: templates/panel/link.html:12
 #, python-format
 msgid ""
 "Expires: %(expires)s — one vote per link, one vote per browser (fingerprint "
 "dedupe)."
-msgstr "Действует до: %(expires)s — один голос на ссылку, один голос на браузер (дедупликация по отпечатку)."
+msgstr ""
+"Действует до: %(expires)s — один голос на ссылку, один голос на браузер "
+"(дедупликация по отпечатку)."
 
-#: templates/panel/link.html:11
+#: templates/panel/link.html:13
 msgid "Back to dashboard"
 msgstr "Вернуться на панель"
 
@@ -239,43 +337,49 @@ msgstr "Вернуться на панель"
 msgid "Admin login"
 msgstr "Вход для администратора"
 
-#: templates/panel/login.html:10 templates/panel/users.html:9
+#: templates/panel/login.html:11 templates/panel/users.html:9
 msgid "Email"
 msgstr "Электронная почта"
 
-#: templates/panel/login.html:11
+#: templates/panel/login.html:12
 msgid "Password"
 msgstr "Пароль"
 
-#: templates/panel/login.html:12
+#: templates/panel/login.html:13
 msgid "Sign in"
 msgstr "Войти"
 
-#: templates/panel/login.html:14
-msgid "Session login — requires an Admin role account."
-msgstr "Вход по сессии — требуется учётная запись с ролью Администратор."
+#: templates/panel/login.html:15
+msgid "Session login — requires an Admin or Secretariat role account."
+msgstr ""
+"Вход по сессии — требуется учётная запись с ролью Администратор или "
+"Секретариат."
 
-#: templates/panel/poll_form.html:3 templates/panel/poll_form.html:7
+#: templates/panel/poll_form.html:3 templates/panel/poll_form.html:8
 msgid "Edit poll"
 msgstr "Изменить опрос"
 
-#: templates/panel/poll_form.html:12
+#: templates/panel/poll_form.html:7
+msgid "Poll setup"
+msgstr "Настройка опроса"
+
+#: templates/panel/poll_form.html:13
 msgid "Description"
 msgstr "Описание"
 
-#: templates/panel/poll_form.html:14
+#: templates/panel/poll_form.html:15
 msgid "Anonymous voting links"
 msgstr "Анонимные ссылки для голосования"
 
-#: templates/panel/poll_form.html:15
+#: templates/panel/poll_form.html:16
 msgid "Allow multiple options"
 msgstr "Разрешить выбор нескольких вариантов"
 
-#: templates/panel/poll_form.html:18
+#: templates/panel/poll_form.html:19
 msgid "Opens at"
 msgstr "Начало"
 
-#: templates/panel/poll_form.html:19
+#: templates/panel/poll_form.html:20
 msgid "Closes at"
 msgstr "Окончание"
 
@@ -283,28 +387,40 @@ msgstr "Окончание"
 msgid "Options (one per line)"
 msgstr "Варианты (по одному в строке)"
 
+#: templates/panel/poll_form.html:21
+msgid "Option count:"
+msgstr "Количество вариантов:"
+
+#: templates/panel/poll_form.html:23
+msgid "Cancel"
+msgstr "Отмена"
+
 #: templates/panel/poll_form.html:23
 msgid "Save poll"
 msgstr "Сохранить опрос"
 
-#: templates/panel/results.html:14 templates/polls/results.html:13
+#: templates/panel/results.html:7
+msgid "Live tally"
+msgstr "Текущие результаты"
+
+#: templates/panel/results.html:15 templates/polls/results.html:14
 msgid "Total valid votes:"
 msgstr "Всего действительных голосов:"
 
-#: templates/panel/results.html:15
+#: templates/panel/results.html:16
 #, python-format
 msgid "Finalized %(ts)s — immutable."
 msgstr "Завершён %(ts)s — неизменяемо."
 
-#: templates/panel/results.html:16
+#: templates/panel/results.html:17
 msgid "Audit trail"
 msgstr "Журнал аудита"
 
-#: templates/panel/results.html:17
+#: templates/panel/results.html:18
 msgid "Hash chain intact for this trail."
 msgstr "Хеш-цепочка этого журнала цела."
 
-#: templates/panel/results.html:22
+#: templates/panel/results.html:23
 msgid "No audit entries."
 msgstr "Нет записей аудита."
 
@@ -328,24 +444,24 @@ msgstr "Применить"
 msgid "No users yet."
 msgstr "Пользователей пока нет."
 
-#: templates/polls/confirm.html:3 templates/polls/confirm.html:6
+#: templates/polls/confirm.html:3 templates/polls/confirm.html:7
 msgid "Vote confirmed"
 msgstr "Голос принят"
 
-#: templates/polls/confirm.html:7
+#: templates/polls/confirm.html:8
 #, python-format
 msgid "Thank you — your vote in <strong>%(title)s</strong> has been recorded"
 msgstr "Спасибо — ваш голос в опросе <strong>%(title)s</strong> зафиксирован"
 
-#: templates/polls/confirm.html:7
+#: templates/polls/confirm.html:8
 msgid "at"
 msgstr "в"
 
-#: templates/polls/confirm.html:8
+#: templates/polls/confirm.html:9
 msgid "Your vote is sealed in the audit chain and cannot be altered."
 msgstr "Ваш голос зафиксирован в цепочке аудита и не может быть изменён."
 
-#: templates/polls/confirm.html:10
+#: templates/polls/confirm.html:11
 msgid "You chose:"
 msgstr "Вы выбрали:"
 
@@ -353,34 +469,79 @@ msgstr "Вы выбрали:"
 msgid "If you think this is a mistake, contact the poll administrator."
 msgstr "Если вы считаете, что это ошибка, свяжитесь с администратором опроса."
 
-#: templates/polls/results.html:14
+#: templates/polls/results.html:6
+msgid "Verified results"
+msgstr "Проверенные результаты"
+
+#: templates/polls/results.html:15
 msgid "Results finalized — immutable."
 msgstr "Результаты завершены — неизменяемы."
 
-#: templates/polls/results.html:15
+#: templates/polls/results.html:16
 msgid ""
 "Tallies are tied to the append-only audit chain; any tampering breaks "
 "verification."
-msgstr "Результаты привязаны к неизменяемой цепочке аудита; любое вмешательство ломает верификацию."
+msgstr ""
+"Результаты привязаны к неизменяемой цепочке аудита; любое вмешательство "
+"ломает верификацию."
 
 #: templates/polls/vote.html:3
 msgid "Vote:"
 msgstr "Голосование:"
 
-#: templates/polls/vote.html:9
-msgid "Closes"
-msgstr "Окончание"
-
-#: templates/polls/vote.html:25
+#: templates/polls/vote.html:5
 msgid "Fingerprint ready — your vote is anonymous and one-time."
 msgstr "Отпечаток готов — ваш голос анонимен и одноразовый."
 
+#: templates/polls/vote.html:5
+msgid "closed"
+msgstr "закрыто"
+
+#: templates/polls/vote.html:5
+msgid "Could not prepare this ballot. Reload the page to try again."
+msgstr ""
+"Не удалось подготовить бюллетень. Перезагрузите страницу и попробуйте снова."
+
+#: templates/polls/vote.html:5
+msgid "Recording…"
+msgstr "Сохраняем…"
+
+#: templates/polls/vote.html:6
+msgid "Secure ballot"
+msgstr "Защищённый бюллетень"
+
+#: templates/polls/vote.html:10
+msgid "Closes in"
+msgstr "До окончания"
+
+#: templates/polls/vote.html:17
+msgid "Select one or more options"
+msgstr "Выберите один или несколько вариантов"
+
+#: templates/polls/vote.html:17
+msgid "Select one option"
+msgstr "Выберите один вариант"
+
+#: templates/polls/vote.html:25
+msgid "Select at least one option."
+msgstr "Выберите хотя бы один вариант."
+
 #: templates/polls/vote.html:26
+msgid "Preparing secure ballot…"
+msgstr "Подготавливаем защищённый бюллетень…"
+
+#: templates/polls/vote.html:27
 msgid "Cast vote"
 msgstr "Проголосовать"
 
-#: templates/polls/vote.html:28
+#: templates/polls/vote.html:29
 msgid ""
 "One vote per link. Your browser fingerprint is stored only as a SHA-256 hash "
 "to prevent duplicates."
-msgstr "Один голос на ссылку. Отпечаток вашего браузера хранится только в виде SHA-256 хеша для защиты от повторов."
+msgstr ""
+"Один голос на ссылку. Отпечаток вашего браузера хранится только в виде "
+"SHA-256 хеша для защиты от повторов."
+
+#: templates/polls/vote.html:30
+msgid "JavaScript is required to prepare this anonymous ballot."
+msgstr "Для подготовки анонимного бюллетеня требуется JavaScript."

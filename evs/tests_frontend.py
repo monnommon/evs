@@ -117,6 +117,14 @@ class AnonymousFlowPageTests(TestCase):
         self.assertEqual(resp.status_code, 410)
         self.assertContains(resp, "expired", status_code=410)
 
+    def test_closed_poll_does_not_render_a_ballot(self):
+        self.poll.status = PollStatus.CLOSED
+        self.poll.save(update_fields=["status"])
+        resp = self.client.get(reverse("poll-by-token", args=[self.session.token]), **HTML)
+        self.assertEqual(resp.status_code, 409)
+        self.assertTemplateUsed(resp, "polls/error.html")
+        self.assertNotContains(resp, 'id="ballot-form"', status_code=409)
+
 
 class PublicResultsPageTests(TestCase):
     def setUp(self):
@@ -216,6 +224,7 @@ class AdminPanelPageTests(TestCase):
         self.assertEqual(resp.status_code, 302, resp.content)
         poll = Poll.objects.get(title="Board election")
         self.assertEqual(poll.options.count(), 2)
+        self.assertEqual(poll.status, PollStatus.ACTIVE)
         self.assertTrue(AuditLog.objects.filter(event_type="poll_created", entity_id=str(poll.id)).exists())
 
     def test_generate_link_page(self):
@@ -226,6 +235,53 @@ class AdminPanelPageTests(TestCase):
         session = self.poll.anonymous_sessions.first()
         self.assertIsNotNone(session)
         self.assertContains(resp, f"/poll/{session.token}/")
+
+    def test_generate_link_rejected_when_poll_is_closed(self):
+        self.login()
+        self.poll.status = PollStatus.CLOSED
+        self.poll.save(update_fields=["status"])
+        resp = self.client.post(reverse("panel-generate-link", args=[self.poll.id]))
+        self.assertEqual(resp.status_code, 409)
+        self.assertEqual(self.poll.anonymous_sessions.count(), 0)
+
+    def test_voting_mode_is_locked_after_link_generation(self):
+        self.login()
+        AnonymousSession.objects.create_session(self.poll)
+        resp = self.client.post(
+            reverse("panel-poll-update", args=[self.poll.id]),
+            {
+                "title": self.poll.title,
+                "description": self.poll.description,
+                "start_at": self.poll.start_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "end_at": self.poll.end_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "options_text": "Alpha\nBeta",
+                "status": "active",
+            },
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.poll.refresh_from_db()
+        self.assertTrue(self.poll.is_anonymous)
+
+    def test_options_are_locked_after_first_vote(self):
+        self.login()
+        vote = Vote.objects.create(poll=self.poll, fingerprint_hash="a" * 64)
+        vote.options.set([self.poll.options.first()])
+        original_ids = list(self.poll.options.values_list("id", flat=True))
+        resp = self.client.post(
+            reverse("panel-poll-update", args=[self.poll.id]),
+            {
+                "title": self.poll.title,
+                "description": self.poll.description,
+                "is_anonymous": "on",
+                "start_at": self.poll.start_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "end_at": self.poll.end_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "options_text": "Changed\nBeta",
+                "status": "active",
+            },
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(list(self.poll.options.values_list("id", flat=True)), original_ids)
+        self.assertEqual(vote.options.count(), 1)
 
     def test_finalize_then_results_page(self):
         self.login()
@@ -240,12 +296,14 @@ class AdminPanelPageTests(TestCase):
         self.assertContains(resp, "Audit trail")
         self.assertContains(resp, "result_finalized")
 
-    def test_secretariat_can_view_results_not_dashboard(self):
+    def test_secretariat_can_view_results_dashboard_without_admin_actions(self):
         self.client.login(email="sec@example.com", password="passw0rd!")
         resp = self.client.get(reverse("panel-poll-results", args=[self.poll.id]))
         self.assertEqual(resp.status_code, 200)
         resp = self.client.get(reverse("panel-dashboard"))
-        self.assertIn(resp.status_code, (302, 403))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, "New poll")
+        self.assertNotContains(resp, 'data-testid="finalize-form"')
 
     def test_role_management_page_and_change(self):
         self.login()
@@ -277,7 +335,7 @@ class AdminPanelPageTests(TestCase):
         resp = self.client.get(reverse("panel-poll-results", args=[self.poll.id]))
         self.assertEqual(resp.status_code, 200)
         resp = self.client.get(reverse("panel-dashboard"))
-        self.assertIn(resp.status_code, (302, 403))
+        self.assertEqual(resp.status_code, 200)
 
     def test_regular_user_rejected_at_login_view(self):
         resp = self.client.post(

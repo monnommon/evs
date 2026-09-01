@@ -3,6 +3,9 @@ from datetime import timedelta
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from accounts.models import Role, User
 from audit.models import AuditLog
@@ -66,6 +69,19 @@ class AuthTests(TestCase):
         resp = self.client.post(reverse("auth-password-reset"), {"email": "nobody@example.com"}, content_type="application/json")
         self.assertEqual(resp.status_code, 200)
 
+    def test_password_reset_confirm_changes_password(self):
+        user = make_user("reset@example.com")
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        resp = self.client.post(
+            reverse("auth-password-reset-confirm"),
+            {"uid": uid, "token": token, "new_password": "new-passw0rd!"},
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        user.refresh_from_db()
+        self.assertTrue(user.check_password("new-passw0rd!"))
+
 
 class AdminPollTests(TestCase):
     def setUp(self):
@@ -112,6 +128,14 @@ class AdminPollTests(TestCase):
         self._auth(self.user)
         resp = self.client.get(reverse("admin-poll-list"))
         self.assertEqual(resp.status_code, 403)
+
+    def test_status_update_is_applied(self):
+        self._auth(self.admin)
+        poll = make_poll(self.admin, status=PollStatus.DRAFT)
+        resp = self.client.patch(reverse("admin-poll-detail", args=[poll.id]), {"status": "active"}, format="json")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        poll.refresh_from_db()
+        self.assertEqual(poll.status, PollStatus.ACTIVE)
 
     def test_results_and_finalize(self):
         self._auth(self.admin)
