@@ -92,8 +92,8 @@ class PollForm(forms.Form):
     is_anonymous = forms.BooleanField(required=False)
     allow_multiple_options = forms.BooleanField(required=False)
     results_visibility = forms.ChoiceField(choices=[("public", _("Public")), ("hidden", _("Hidden"))], initial="public", required=False)
-    start_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    end_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
+    start_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"))
+    end_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"))
     options_text = forms.CharField(widget=forms.Textarea, help_text=_("One option per line."))
     status = forms.ChoiceField(choices=[(PollStatus.DRAFT, PollStatus.DRAFT.label), (PollStatus.ACTIVE, PollStatus.ACTIVE.label)], initial=PollStatus.DRAFT)
 

@@ -107,6 +107,23 @@ table td { vertical-align: middle; }
 .btn-secondary { border-color: var(--pico-border-color); background: var(--pico-card-background-color); color: var(--pico-color); }
 .btn-secondary:hover { background: var(--pico-background-color); color: var(--pico-color); }
 .btn-block { width: 100%; }
+/* Compact table/list action buttons (colored outlines, not bare links) */
+.btn-sm { display: inline-flex; align-items: center; min-height: 30px; padding: .15rem .7rem; border: 1px solid; border-radius: 999px; background: transparent; cursor: pointer; font-size: .78rem; font-weight: 650; text-decoration: none; width: auto; margin-bottom: 0; }
+.btn-sm:hover { filter: brightness(.95); text-decoration: none; }
+.btn-view { border-color: rgba(35,91,215,.45); color: var(--pico-primary); }
+.btn-view:hover { background: rgba(35,91,215,.08); color: var(--pico-primary); }
+.btn-accent { border-color: rgba(19,121,91,.45); color: #0b6148; }
+.btn-accent:hover { background: rgba(19,121,91,.08); color: #0b6148; }
+.btn-danger { border-color: rgba(180,35,60,.45); color: #b4233c; }
+.btn-danger:hover { background: rgba(180,35,60,.08); color: #b4233c; }
+@media (prefers-color-scheme: dark) {
+  .btn-view { color: #7fa7f0; border-color: rgba(91,136,236,.45); }
+  .btn-view:hover { background: rgba(91,136,236,.12); }
+  .btn-accent { color: #5ec9a4; border-color: rgba(46,181,133,.45); }
+  .btn-accent:hover { background: rgba(46,181,133,.12); }
+  .btn-danger { color: #ef8296; border-color: rgba(229,99,122,.45); }
+  .btn-danger:hover { background: rgba(229,99,122,.12); }
+}
 /* Pico makes submit buttons width:100% — keep form footers and inline forms compact */
 .form-actions button[type="submit"], .form-actions > button { width: auto; margin-bottom: 0; }
 button[type="submit"] { width: 100%; } /* ballot/standalone primary action stays full-width */

@@ -45,16 +45,16 @@
         <td>{{ poll.end_at }}</td>
         <td>{{ poll.link_count }}</td>
         <td><div class="actions">
-          {% if can_manage and not poll.is_finalized %}<a href="/panel/polls/{{ poll.id }}/edit/">{% trans "edit" %}</a>{% endif %}
-          <a href="/panel/polls/{{ poll.id }}/results/">{% trans "results" %}</a>
+          {% if can_manage and not poll.is_finalized %}<a class="btn-sm btn-view" href="/panel/polls/{{ poll.id }}/edit/">{% trans "edit" %}</a>{% endif %}
+          <a class="btn-sm btn-view" href="/panel/polls/{{ poll.id }}/results/">{% trans "results" %}</a>
           {% if can_manage and not poll.is_finalized %}
           <form method="post" action="/panel/polls/{{ poll.id }}/finalize/" style="display:inline" data-testid="finalize-form">
-            {% csrf_token %}<button class="btn-quiet" type="submit" data-confirm="{% trans 'Finalize this poll? Voting will stop and results will become immutable.' %}">{% trans "finalize" %}</button>
+            {% csrf_token %}<button class="btn-sm btn-danger" type="submit" data-confirm="{% trans 'Finalize this poll? Voting will stop and results will become immutable.' %}">{% trans "finalize" %}</button>
           </form>
           {% endif %}
           {% if can_manage and poll.is_anonymous and poll.is_open and not poll.is_finalized %}
           <form method="post" action="/panel/polls/{{ poll.id }}/generate-link/" style="display:inline" data-testid="generate-link-form">
-            {% csrf_token %}<input type="number" name="count" value="1" min="1" max="500" aria-label="{% trans 'Link count' %}" style="width:4.5rem"> <button class="btn-quiet" type="submit">{% trans "generate link(s)" %}</button>
+            {% csrf_token %}<input type="number" name="count" value="1" min="1" max="500" aria-label="{% trans 'Link count' %}" style="width:4.5rem"> <button class="btn-sm btn-accent" type="submit">{% trans "generate link(s)" %}</button>
           </form>
           {% endif %}
         </div></td>

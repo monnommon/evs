@@ -4,6 +4,7 @@ command, registration switch, multi-choice percentages."""
 
 import csv
 import io
+import re
 from datetime import timedelta
 
 from django.core.management import call_command
@@ -33,6 +34,20 @@ class DashboardFilterTests(TestCase):
     def setUp(self):
         self.admin = make_user("admin@example.com", Role.Roles.ADMIN)
         self.client.login(email="admin@example.com", password="passw0rd!")
+
+    def test_edit_form_preserves_dates(self):
+        """datetime-local inputs need value="YYYY-MM-DDTHH:MM" — the Django
+        default "YYYY-MM-DD HH:MM:SS" makes browsers drop the value entirely
+        (the 'form loses saved data' bug)."""
+        from polls.views_pages import PollForm, _poll_form_initial
+
+        poll = make_poll(self.admin)
+        form = PollForm(initial=_poll_form_initial(poll))
+        for name in ("start_at", "end_at"):
+            html = str(form[name])
+            m = re.search(r'value="([^"]+)"', html)
+            self.assertIsNotNone(m, f"{name} renders no value")
+            self.assertRegex(m.group(1), r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", f"{name} not datetime-local format: {m.group(1)}")
 
     def test_status_filter(self):
         make_poll(self.admin, status=PollStatus.CLOSED)
