@@ -32,6 +32,7 @@ services:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DEBUG: ${DEBUG:-false}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?ALLOWED_HOSTS is required}
+      STATIC_MANIFEST: "true"
     depends_on:
       db:
         condition: service_healthy
