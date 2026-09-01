@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from audit.utils import log_event
@@ -12,11 +13,20 @@ from .models import User
 from .serializers import LoginSerializer, RegisterSerializer, UserSerializer
 
 
+class AuthThrottle(AnonRateThrottle):
+    """Brake on public auth endpoints (login/register/password-reset)."""
+
+    scope = "auth"
+
+
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
 
     def create(self, request, *args, **kwargs):
+        if not getattr(settings, "REGISTRATION_OPEN", True):
+            return Response({"detail": "Registration is closed on this instance."}, status=status.HTTP_403_FORBIDDEN)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -30,6 +40,7 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -66,6 +77,7 @@ class PasswordResetView(views.APIView):
     """Issue a signed one-time reset token (email delivery via console in dev)."""
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [AuthThrottle]
 
     def post(self, request):
         email = (request.data.get("email") or "").lower().strip()

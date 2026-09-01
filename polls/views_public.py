@@ -6,14 +6,22 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 
 from audit.utils import log_event
-from .models import AnonymousSession, Option, Poll, PollStatus, Vote
-from .serializers import PollSerializer, VoteResultSerializer, VoteSerializer
+from polls.models import AnonymousSession, Poll, PollStatus, Vote
+from polls.serializers import PollSerializer, VoteResultSerializer, VoteSerializer
+from polls.views_admin import VotePermission
 
 
 def _cast_vote(poll, user, option_ids, fingerprint_hash=None, anonymous_session=None):
-    """Shared vote creation with audit logging. Caller has validated inputs."""
+    """Shared vote creation with audit logging. Caller has validated inputs.
+
+    Ballot secrecy: the audit entry deliberately records NO vote id and NO
+    option ids — from the chain alone you must not be able to reconstruct
+    who voted for what. Result integrity is proven by `result_finalized`
+    (tally) + the DB, not by per-vote audit payloads.
+    """
     vote = Vote.objects.create(
         poll=poll,
         user=user,
@@ -22,18 +30,18 @@ def _cast_vote(poll, user, option_ids, fingerprint_hash=None, anonymous_session=
     )
     vote.options.set(option_ids)
     event = "anonymous_vote_cast" if user is None else "vote_cast"
-    log_event(
-        event,
-        "Poll",
-        str(poll.id),
-        {"vote_id": str(vote.id), "option_ids": [str(o) for o in option_ids]},
-        created_by=user,
-    )
+    log_event(event, "Poll", str(poll.id), {"ballot_count": 1}, created_by=user)
     return vote
 
 
 def _wants_html(request):
     return "text/html" in request.headers.get("Accept", "")
+
+
+class VoteThrottle(AnonRateThrottle):
+    """Rate limit anonymous voting endpoints (brute-force / link grinding)."""
+
+    scope = "vote"
 
 
 def _is_form_post(request):
@@ -98,7 +106,6 @@ class PollByTokenView(views.APIView):
             {
                 "poll": PollSerializer(poll, context={"request": request}).data,
                 "session": {"id": str(session.id), "expires_at": session.expires_at, "used": session.used},
-                "already_voted": Vote.objects.filter(poll=poll, fingerprint_hash__isnull=False).exists() if poll.is_anonymous else False,
             }
         )
 
@@ -107,13 +114,14 @@ class AnonymousVoteView(views.APIView):
     """POST /poll/{token}/vote — anonymous vote via one-time link.
 
     Dual mode: HTML form posts (browsers) redirect to the confirm page on
-    success; JSON posts (API/HTMX) get the JSON contract below. Duplicate
-    prevention is the existing one-vote-per-(poll, fingerprint_hash)
-    constraint — no second dedupe path. The browser fingerprint is submitted
-    by the frontend and stored as a SHA-256 hash; a used token is refused.
+    success; JSON posts (API/HTMX) get the JSON contract below. The one-time
+    link is the primary dedupe guarantee; the browser fingerprint (stored as
+    a SHA-256 hash) is a secondary signal that may be absent when the client
+    has no crypto.subtle — the DB constraints keep the vote unique per link.
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [VoteThrottle]
 
     def post(self, request, token):
         session = AnonymousSession.objects.filter(token=token).select_related("poll").first()
@@ -136,13 +144,7 @@ class AnonymousVoteView(views.APIView):
             fingerprint = request.data.get("fingerprint") or ""
             option_ids = request.data.get("option_ids")
         fingerprint_hash = hashlib.sha256(fingerprint.encode("utf-8")).hexdigest() if fingerprint else None
-        if fingerprint_hash is None:
-            msg = _("Browser fingerprint is required for anonymous voting.")
-            if html:
-                return _render_ballot(request, poll, session, token, msg, status.HTTP_400_BAD_REQUEST)
-            return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
-
-        if Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
+        if fingerprint_hash is not None and Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
             msg = _("A vote with this browser already exists.")
             if html:
                 return _render_ballot(request, poll, session, token, msg, status.HTTP_409_CONFLICT)
@@ -166,14 +168,13 @@ class AnonymousVoteView(views.APIView):
                     if html:
                         return _render_ballot(request, poll, session, token, err[0], err[1])
                     return Response({"detail": err[0]}, status=err[1])
-                if Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
+                if fingerprint_hash is not None and Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
                     msg = _("A vote with this browser already exists.")
                     if html:
                         return _render_ballot(request, poll, session, token, msg, status.HTTP_409_CONFLICT)
                     return Response({"detail": msg}, status=status.HTTP_409_CONFLICT)
                 session.used = True
-                session.fingerprint = fingerprint_hash
-                session.save(update_fields=["used", "fingerprint"])
+                session.save(update_fields=["used"])
                 vote = _cast_vote(poll, None, option_ids, fingerprint_hash=fingerprint_hash, anonymous_session=session)
         except IntegrityError:
             msg = _("This link has already been used or this browser has already voted.")
@@ -208,10 +209,11 @@ class AnonymousConfirmView(views.APIView):
             if vote is None and not session.used:
                 return redirect("poll-by-token", token=token)
             return render(request, "polls/confirm.html", {"poll": session.poll, "vote": vote, "token": token})
+        # JSON deliberately exposes no ballot contents: the one-time link can
+        # be forwarded/screenshot, so the chosen options must not travel with it.
         return Response(
             {
                 "poll": PollSerializer(session.poll, context={"request": request}).data,
-                "vote": VoteResultSerializer(vote).data if vote else None,
                 "confirmed": vote is not None and vote.is_valid,
             }
         )
@@ -252,7 +254,8 @@ class PollDetailView(generics.RetrieveAPIView):
 class AuthenticatedVoteView(views.APIView):
     """POST /polls/{id}/vote — vote in a non-anonymous poll."""
 
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, VotePermission]
+    throttle_classes = [UserRateThrottle]
 
     def post(self, request, pk):
         poll = generics.get_object_or_404(Poll, pk=pk)

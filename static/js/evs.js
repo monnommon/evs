@@ -5,17 +5,13 @@
 
   async function sha256Hex(text) {
     if (window.crypto && crypto.subtle && crypto.subtle.digest) {
-      try {
-        const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-        return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
-      } catch (_) { /* fall through to a stable local hash */ }
+      const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, "0")).join("");
     }
-    let hash = 0x811c9dc5;
-    for (let index = 0; index < text.length; index += 1) {
-      hash ^= text.charCodeAt(index);
-      hash = (hash + (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24)) >>> 0;
-    }
-    return "fnv-" + hash.toString(16).padStart(8, "0");
+    // No crypto.subtle (e.g. plain HTTP): no fingerprint.
+    // The one-time link is the dedupe guarantee; the server accepts a
+    // fingerprint-less vote (null) from a fresh link.
+    return null;
   }
 
   async function browserFingerprint() {
@@ -65,9 +61,11 @@
     const timer = window.setInterval(function () { if (!updateCountdown()) window.clearInterval(timer); }, 1000);
 
     browserFingerprint().then(function (fingerprint) {
-      fingerprintInput.value = fingerprint;
+      // No crypto.subtle → fingerprint is null: send an empty field; the
+      // one-time link alone guarantees the vote is unique.
+      fingerprintInput.value = fingerprint || "";
       submit.disabled = !updateCountdown();
-      state.textContent = root.dataset.ready;
+      state.textContent = fingerprint ? root.dataset.ready : root.dataset.readyNoFp;
     }).catch(function () {
       state.textContent = root.dataset.failed;
     });

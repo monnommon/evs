@@ -10,6 +10,7 @@ from audit.utils import audit_trail, log_event, verify_chain
 from polls.models import AnonymousSession, Poll, PollStatus, Vote
 from polls.serializers import (
     AnonymousSessionSerializer,
+    GenerateLinkSerializer,
     PollCreateSerializer,
     PollResultsSerializer,
     PollSerializer,
@@ -27,6 +28,14 @@ class AdminOrResultsViewer(permissions.BasePermission):
         if not (request.user and request.user.is_authenticated):
             return False
         return request.user.has_permission("view_results") or request.user.has_permission("create_poll")
+
+
+class VotePermission(permissions.BasePermission):
+    """Identified voting requires the role permission `vote` (Admin/Secretariat
+    users hold it too, but identified polls normally target plain Users)."""
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.has_permission("vote"))
 
 
 # ---------------- Admin panel API (/api/admin/...) ----------------
@@ -161,7 +170,9 @@ class AdminGenerateLinkView(views.APIView):
             return Response({"detail": "Links can only be generated for anonymous polls."}, status=status.HTTP_400_BAD_REQUEST)
         if poll.is_finalized or not poll.is_open:
             return Response({"detail": "Links can only be generated while the poll is open."}, status=status.HTTP_409_CONFLICT)
-        session = AnonymousSession.objects.create_session(poll, ttl_hours=request.data.get("ttl_hours"))
+        serializer = GenerateLinkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        session = AnonymousSession.objects.create_session(poll, ttl_hours=serializer.validated_data.get("ttl_hours"))
         log_event("session_generated", "Poll", str(poll.id), {"session_id": str(session.id), "expires_at": session.expires_at.isoformat()}, created_by=request.user)
         return Response(AnonymousSessionSerializer(session, context={"request": request}).data, status=status.HTTP_201_CREATED)
 

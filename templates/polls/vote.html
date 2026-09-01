@@ -2,7 +2,7 @@
 {% load i18n %}
 {% block title %}{% trans "Vote:" %} {{ poll.title }}{% endblock %}
 {% block content %}
-<div class="card ballot-card js-vote" data-end-at="{{ poll.end_at|date:'c' }}" data-multiple="{{ poll.allow_multiple_options|yesno:'true,false' }}" data-ready="{% trans 'Fingerprint ready — your vote is anonymous and one-time.' %}" data-closed="{% trans 'closed' %}" data-failed="{% trans 'Could not prepare this ballot. Reload the page to try again.' %}" data-recording="{% trans 'Recording…' %}">
+<div class="card ballot-card js-vote" data-end-at="{{ poll.end_at|date:'c' }}" data-multiple="{{ poll.allow_multiple_options|yesno:'true,false' }}" data-ready="{% trans 'Fingerprint ready — your vote is anonymous and one-time.' %}" data-ready-no-fp="{% trans 'Your vote is anonymous and one-time — secured by this personal link.' %}" data-closed="{% trans 'closed' %}" data-failed="{% trans 'Could not prepare this ballot. Reload the page to try again.' %}" data-recording="{% trans 'Recording…' %}">
   <div class="ballot-header"><span class="secure-mark" aria-hidden="true">✓</span><span>{% trans "Secure ballot" %}</span></div>
   <h1>{{ poll.title }}</h1>
   {% if poll.description %}<p class="muted">{{ poll.description }}</p>{% endif %}

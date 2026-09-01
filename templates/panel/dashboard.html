@@ -10,9 +10,19 @@
 <div class="card" data-testid="panel-dashboard">
   <div class="page-heading">
     <div><p class="eyebrow">{% trans "Control center" %}</p><h1>{% trans "Polls" %}</h1></div>
-    {% if can_manage %}
-    <a class="btn" href="/panel/polls/new/">{% trans "New poll" %}</a>
-    {% endif %}
+    <div class="actions no-print">
+      <form method="get" class="actions">
+        <select name="status" onchange="this.form.submit()">
+          <option value="">{% trans "All statuses" %}</option>
+          {% for s, label in status_choices %}
+          <option value="{{ s }}" {% if status_filter == s %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% if can_manage %}
+      <a class="btn" href="/panel/polls/new/">{% trans "New poll" %}</a>
+      {% endif %}
+    </div>
   </div>
   <div class="stats-grid" aria-label="Poll summary">
     <div class="stat"><span>{% trans "Total polls" %}</span><strong>{{ stats.total }}</strong></div>
@@ -44,7 +54,7 @@
           {% endif %}
           {% if can_manage and poll.is_anonymous and poll.is_open and not poll.is_finalized %}
           <form method="post" action="/panel/polls/{{ poll.id }}/generate-link/" style="display:inline" data-testid="generate-link-form">
-            {% csrf_token %}<button class="btn-quiet" type="submit">{% trans "generate link" %}</button>
+            {% csrf_token %}<input type="number" name="count" value="1" min="1" max="500" aria-label="{% trans 'Link count' %}" style="width:4.5rem"> <button class="btn-quiet" type="submit">{% trans "generate link(s)" %}</button>
           </form>
           {% endif %}
         </div></td>
@@ -54,5 +64,12 @@
       {% endfor %}
     </tbody>
   </table></div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="actions no-print" style="margin-top:1rem">
+    {% if page_obj.has_previous %}<a class="btn-quiet" href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">←</a>{% endif %}
+    <span class="muted small">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn-quiet" href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">→</a>{% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

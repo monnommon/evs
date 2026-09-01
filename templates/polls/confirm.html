@@ -13,5 +13,6 @@
     {% for option in vote.options.all %}<li>{{ option.text }}</li>{% endfor %}
   </ul>
   {% endif %}
+  <p><a class="btn btn-secondary" href="{% url 'page-poll-results' poll.id %}">{% trans "Results will be published here after the poll closes." %}</a></p>
 </div>
 {% endblock %}

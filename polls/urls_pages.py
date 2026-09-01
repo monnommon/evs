@@ -16,6 +16,7 @@ urlpatterns = [
     path("panel/polls/<uuid:poll_id>/finalize/", views_pages.panel_poll_finalize, name="panel-poll-finalize"),
     path("panel/polls/<uuid:poll_id>/generate-link/", views_pages.panel_generate_link, name="panel-generate-link"),
     path("panel/polls/<uuid:poll_id>/results/", views_pages.panel_poll_results, name="panel-poll-results"),
+    path("panel/polls/<uuid:poll_id>/results/export/", views_pages.panel_poll_results_export, name="panel-poll-results-export"),
     path("panel/polls/<uuid:poll_id>/delete/", views_pages.panel_poll_delete, name="panel-poll-delete"),
     path("panel/users/", views_pages.panel_users, name="panel-users"),
     path("panel/users/<uuid:user_id>/role/", views_pages.panel_user_role, name="panel-user-role"),

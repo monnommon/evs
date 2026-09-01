@@ -259,6 +259,36 @@ class VotingTests(TestCase):
         resp = client_post_json(c, reverse("poll-anon-vote", args=[session.token]), {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp"})
         self.assertEqual(resp.status_code, 410)
 
+    def test_anonymous_vote_without_fingerprint_allowed(self):
+        """A client without crypto.subtle (plain HTTP) omits the fingerprint —
+        the one-time link alone must guarantee uniqueness."""
+        poll = make_poll(self.admin, is_anonymous=True)
+        s1 = AnonymousSession.objects.create_session(poll)
+        s2 = AnonymousSession.objects.create_session(poll)
+        c = self._client()
+        resp = client_post_json(c, reverse("poll-anon-vote", args=[s1.token]), {"option_ids": [str(poll.options.first().id)]})
+        self.assertEqual(resp.status_code, 201, resp.content)
+        resp = client_post_json(c, reverse("poll-anon-vote", args=[s2.token]), {"option_ids": [str(poll.options.all()[1].id)]})
+        self.assertEqual(resp.status_code, 201, resp.content)
+
+    def test_identified_vote_requires_vote_permission(self):
+        """Self-registered users vote; a user whose role lacks `vote` is 403."""
+        poll = make_poll(self.admin)
+        no_vote_role, _ = Role.objects.get_or_create(name="Observer", defaults={"permissions": []})
+        self.user.role = no_vote_role
+        self.user.save(update_fields=["role"])
+        c = self._client(self.user)
+        resp = client_post_json(c, reverse("poll-vote", args=[poll.id]), {"option_ids": [str(poll.options.first().id)]})
+        self.assertEqual(resp.status_code, 403, resp.content)
+
+    def test_generate_link_ttl_hours_validated(self):
+        poll = make_poll(self.admin, is_anonymous=True)
+        c = self._client(self.admin)
+        resp = client_post_json(c, reverse("admin-generate-link", args=[poll.id]), {"ttl_hours": "abc"})
+        self.assertEqual(resp.status_code, 400, resp.content)
+        resp = client_post_json(c, reverse("admin-generate-link", args=[poll.id]), {"ttl_hours": 0})
+        self.assertEqual(resp.status_code, 400, resp.content)
+
 
 class AuditChainTests(TestCase):
     def setUp(self):
@@ -307,3 +337,31 @@ class AuditChainTests(TestCase):
         h3 = compute_hash("b" * 64, {"k": 1})
         self.assertEqual(h1, h2)
         self.assertNotEqual(h1, h3)
+
+    def test_ballot_secrecy_invariant(self):
+        """The full audit chain must not reveal how any individual voted:
+        no vote ids, no option ids in any audit payload; the confirm JSON
+        must not return ballot contents."""
+        poll = make_poll(self.admin, is_anonymous=True)
+        s1 = AnonymousSession.objects.create_session(poll)
+        s2 = AnonymousSession.objects.create_session(poll)
+        from rest_framework.test import APIClient
+
+        c = APIClient()
+        # two anonymous votes with different choices
+        c.post(reverse("poll-anon-vote", args=[s1.token]), {"option_ids": [str(poll.options.first().id)], "fingerprint": "fp-a"}, format="json")
+        c.post(reverse("poll-anon-vote", args=[s2.token]), {"option_ids": [str(poll.options.all()[1].id)], "fingerprint": "fp-b"}, format="json")
+        vote_ids = set(str(v.id) for v in Vote.objects.all())
+        option_ids = set(str(o.id) for o in poll.options.all())
+        for entry in AuditLog.objects.all():
+            blob = str(entry.data)
+            for vid in vote_ids:
+                self.assertNotIn(vid, blob, f"vote id leaked in {entry.event_type}")
+            for oid in option_ids:
+                self.assertNotIn(oid, blob, f"option id leaked in {entry.event_type}")
+        # confirm JSON: no ballot contents
+        resp = c.get(reverse("poll-anon-confirm", args=[s1.token]))
+        payload = resp.json()
+        self.assertTrue(payload["confirmed"])
+        self.assertNotIn("vote", payload)
+        self.assertNotIn("options", payload)

@@ -16,6 +16,7 @@
       <label class="option">{{ form.allow_multiple_options }} {% trans "Allow multiple options" %}</label>
       {{ form.is_anonymous.errors }}{{ form.allow_multiple_options.errors }}
     </div>
+    <div class="field"><label for="{{ form.results_visibility.id_for_label }}">{% trans "Results visibility" %}</label>{{ form.results_visibility }}{{ form.results_visibility.errors }}</div>
     <div class="field"><label for="{{ form.start_at.id_for_label }}">{% trans "Opens at" %}</label>{{ form.start_at }}{{ form.start_at.errors }}</div>
     <div class="field"><label for="{{ form.end_at.id_for_label }}">{% trans "Closes at" %}</label>{{ form.end_at }}{{ form.end_at.errors }}</div>
     <div class="field field-wide"><label for="{{ form.options_text.id_for_label }}">{% trans "Options (one per line)" %}</label>{{ form.options_text }}{{ form.options_text.errors }}<span class="field-hint js-option-count" data-label="{% trans 'Option count:' %}"></span></div>

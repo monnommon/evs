@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements.txt
+      - name: Deploy system check
+        env:
+          SECRET_KEY: ci-secret-key-ci-secret-key-ci-secret-key
+          ALLOWED_HOSTS: localhost
+        run: python manage.py check --deploy
+        # ponytail: W008 (SSL redirect) is intentionally open behind plain-HTTP nginx
+      - run: python manage.py test

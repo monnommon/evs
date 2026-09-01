@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}EVS — {% trans "Electronic voting" %}{% endblock %}
+{% block nav %}<a href="/panel/">{% trans "Admin panel" %}</a>{% endblock %}
+{% block content %}
+<div class="card" data-testid="landing">
+  <p class="eyebrow">{% trans "Electronic Voting System" %}</p>
+  <h1>{% trans "Vote with a personal link" %}</h1>
+  <p class="muted">{% trans "If you were invited to vote, open the link you received — no account or password needed." %}</p>
+  <div class="stats-grid">
+    <div class="stat"><span>{% trans "Anonymous" %}</span><strong>{% trans "By link" %}</strong></div>
+    <div class="stat"><span>{% trans "One vote" %}</span><strong>{% trans "Per link" %}</strong></div>
+    <div class="stat"><span>{% trans "Results" %}</span><strong>{% trans "Audited" %}</strong></div>
+  </div>
+  <p>{% trans "Your vote is sealed in an append-only audit chain. Ballot contents are never recorded in the audit log." %}</p>
+  <p class="muted small">{% trans "Poll administrators sign in via the admin panel." %}</p>
+</div>
+{% endblock %}

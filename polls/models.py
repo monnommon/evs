@@ -11,7 +11,6 @@ class PollStatus(models.TextChoices):
     DRAFT = "draft", _("Draft")
     ACTIVE = "active", _("Active")
     CLOSED = "closed", _("Closed")
-    ARCHIVED = "archived", _("Archived")
 
 
 class Poll(models.Model):
@@ -21,6 +20,12 @@ class Poll(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="polls")
     is_anonymous = models.BooleanField(default=False)
     allow_multiple_options = models.BooleanField(default=False)
+    results_visibility = models.CharField(
+        max_length=10,
+        choices=[("public", _("Public")), ("hidden", _("Hidden"))],
+        default="public",
+        help_text=_("Hidden: only Admin/Secretariat see results; public page returns 403."),
+    )
     start_at = models.DateTimeField(default=timezone.now)
     end_at = models.DateTimeField()
     status = models.CharField(max_length=10, choices=PollStatus.choices, default=PollStatus.DRAFT)

@@ -2,7 +2,8 @@
 
 Self-hosted voting platform built on Django 5 + PostgreSQL with anonymous
 (link-based) and identified voting, role-based access, and an append-only
-hash-chained audit log for immutable results.
+hash-chained audit log for immutable results. The frontend is server-rendered
+Django templates with a small dependency-free JS layer (`static/js/evs.js`).
 
 - **Admin panel** (`/panel/`): create/manage polls, one-time voting links,
   role management, results with audit trail, chain-integrity indicator.
@@ -131,6 +132,9 @@ All configuration is via environment variables (see `evs/settings.py`).
 | `DEFAULT_FROM_EMAIL` | `evs-noreply@example.com` | From-address for outgoing mail. |
 | `FRONTEND_URL` | `http://localhost` | Base URL used in generated links (e.g. password reset). |
 | `STATIC_ROOT` | `./staticfiles` | Where `collectstatic` gathers files. |
+| `TIME_ZONE` | `Europe/Moscow` | Display timezone (dates are stored as UTC internally). |
+| `SECURE_SSL_REDIRECT` | `false` | With `DEBUG=false` + TLS proxy: redirect all HTTP→HTTPS. Secure cookies and HSTS are enabled automatically when `DEBUG=false`. |
+| `REGISTRATION_OPEN` | `true` | `false` closes self-registration (403) — accounts are then created via Django admin. No email verification is implemented either way. |
 
 ### Email / SMTP (password reset)
 
@@ -165,12 +169,15 @@ DEFAULT_FROM_EMAIL=votes@example.com
 ## How to run a vote (end-to-end)
 
 1. **Create a poll** — `/panel/` → *New poll*: title, description, start/end
-   time (UTC), `anonymous` on/off, `multiple options` on/off, one option per
-   line. Status `active` opens voting immediately.
+   time (displayed in the configured `TIME_ZONE`), `anonymous` on/off,
+   `multiple options` on/off, one option per line. Status `active` opens
+   voting immediately.
 2. **Invite voters**:
    - Anonymous: `/panel/` → *Generate link* — produces a one-time URL
-     `/poll/<token>/`. Each link allows exactly one vote; the same browser
-     can't vote twice in the same poll (fingerprint dedupe).
+     `/poll/<token>/`. Set the count field to N to generate N links at once
+     and download them as CSV (token, url, expires). Each link allows exactly
+     one vote; the same browser can't vote twice in the same poll
+     (fingerprint dedupe).
    - Identified: voters register (`/api/auth/register/`) and vote via
      `POST /polls/{id}/vote/` with their JWT.
 3. **During the vote** — progress visible at `/panel/` (Admin) or results
@@ -213,14 +220,29 @@ per fingerprint per poll, one vote per link), `GET /poll/{token}/confirm/`.
 ## Security notes
 
 - **Always** set `SECRET_KEY`, `ALLOWED_HOSTS`, `DEBUG=false` in production.
+  The bundled `docker-compose.yml` now **refuses to start** without them.
+  With `DEBUG=false` the app also enables secure cookies and HSTS; set
+  `SECURE_SSL_REDIRECT=true` when a TLS proxy sits in front.
+- **Ballot secrecy.** The audit chain records *that* a vote happened
+  (`vote_cast` / `anonymous_vote_cast` with a ballot counter), never *what*
+  was chosen: no vote ids, no option ids in audit payloads, and the
+  `GET /poll/{token}/confirm/` JSON returns only `confirmed`, not the
+  ballot. Result integrity is proven by the `result_finalized` entry (the
+  tally) plus DB constraints — not by per-vote audit data. A regression
+  test (`test_ballot_secrecy_invariant`) enforces this.
 - The audit log is append-only: the ORM blocks `AuditLog` update/delete;
   the chain hash makes even raw-DB edits detectable (`audit/verify/`).
-- Anonymous dedupe relies on a client-computed browser fingerprint — it
-  prevents casual double-voting, not determined attackers (by design).
+- Anonymous dedupe: the **one-time link is the guarantee**; the browser
+  fingerprint (SHA-256 of client signals, sent only when `crypto.subtle` is
+  available) is a best-effort secondary signal against casual double-voting
+  on shared links, not a defense against determined attackers.
 - HTTPS: terminate at your reverse proxy (nginx config here serves port 80
   — put an TLS proxy/CDN in front for production).
 - Passwords are hashed by Django's PBKDF2; JWT refresh tokens are
-  blacklisted on logout.
+  blacklisted on logout. Public auth endpoints and voting endpoints are
+  rate-limited (`auth`: 30/min per IP, `vote`: 120/min per IP).
+- Identified voting requires the role permission `vote` (the default `User`
+  role has it; you can strip it from custom roles to lock voting down).
 
 ---
 
@@ -228,11 +250,41 @@ per fingerprint per poll, one vote per link), `GET /poll/{token}/confirm/`.
 
 ```bash
 # local venv
-python manage.py test               # full suite (62 tests)
+python manage.py test               # full suite (80 tests)
 
 # docker
 docker compose exec web python manage.py test
 ```
+
+CI runs the suite plus `manage.py check --deploy` on Python 3.11/3.12
+(`.github/workflows/ci.yml`).
+
+### Scheduled poll lifecycle
+
+Drafts auto-activate at `start_at` and active polls auto-close at `end_at` —
+but only if something runs the scheduler. Any one of:
+
+```bash
+# host cron, every 5 minutes
+*/5 * * * * cd /path/to/evs && python manage.py poll_lifecycle
+
+# or inside the docker web container (cron or a loop), e.g.:
+docker compose exec web python manage.py poll_lifecycle
+```
+
+Without it, polls open/close only when an admin flips the status by hand.
+
+### Results visibility
+
+Each poll has a `results_visibility` setting (`public` by default):
+`hidden` returns 403 on the public results URL for anyone without the
+`view_results`/`create_poll` permissions — for internal votes.
+
+### Multi-choice percentages
+
+Percentages are computed **per voter** (an option chosen by both voters in a
+two-voter poll shows 100%), not per selection — in multi-choice polls the
+selection total exceeds the voter count.
 
 Coverage highlights: auth flows, duplicate-vote prevention (DB constraints
 + fingerprint dedupe), link expiry/reuse, finalize lock, hash-chain

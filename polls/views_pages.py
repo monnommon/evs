@@ -6,12 +6,16 @@ views_public.py as dual-mode API views; this module holds the results page
 and the session-auth admin panel, all gated server-side by Role permissions.
 """
 
+import csv
+
 from django import forms
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -38,6 +42,8 @@ def _login_redirect(request):
 def poll_results(request, poll_id):
     """GET /polls/<id>/results/ — results page; only for closed polls."""
     poll = get_object_or_404(Poll.objects.prefetch_related("options"), pk=poll_id)
+    if poll.results_visibility == "hidden" and not _can_view_results(request.user):
+        return render(request, "polls/error.html", {"heading": _("Not available"), "message": _("Results are available after the poll closes.")}, status=403)
     if not poll.is_finalized and poll.status != PollStatus.CLOSED:
         return render(request, "polls/error.html", {"heading": _("Not available"), "message": _("Results are available after the poll closes.")}, status=403)
     tally = _tally_with_percentages(poll)
@@ -85,6 +91,7 @@ class PollForm(forms.Form):
     description = forms.CharField(required=False, widget=forms.Textarea)
     is_anonymous = forms.BooleanField(required=False)
     allow_multiple_options = forms.BooleanField(required=False)
+    results_visibility = forms.ChoiceField(choices=[("public", _("Public")), ("hidden", _("Hidden"))], initial="public", required=False)
     start_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
     end_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
     options_text = forms.CharField(widget=forms.Textarea, help_text=_("One option per line."))
@@ -107,8 +114,11 @@ class PollForm(forms.Form):
 def _tally_with_percentages(poll):
     tally = list(poll.options.annotate(n=Count("votes", filter=Q(votes__is_valid=True))).values("id", "text", "order", "n"))
     selections = sum(row["n"] for row in tally)
+    voters = poll.votes.filter(is_valid=True).count()
     for row in tally:
-        row["percent"] = round((row["n"] / selections) * 100, 1) if selections else 0
+        # percent of voters (not of selections): in multi-choice polls the
+        # selection sum can exceed 100%, the voter sum cannot.
+        row["percent"] = round((row["n"] / voters) * 100, 1) if voters else 0
     return tally
 
 
@@ -118,6 +128,7 @@ def _poll_form_initial(poll):
         "description": poll.description,
         "is_anonymous": poll.is_anonymous,
         "allow_multiple_options": poll.allow_multiple_options,
+        "results_visibility": poll.results_visibility,
         "start_at": poll.start_at,
         "end_at": poll.end_at,
         "options_text": "\n".join(o.text for o in poll.options.all()),
@@ -130,20 +141,29 @@ def panel_dashboard(request):
     """GET /panel/ — poll CRUD overview, role management link, audit indicator."""
     if not _can_view_results(request.user):
         return _login_redirect(request)
+    status = request.GET.get("status", "")
     polls = Poll.objects.prefetch_related("options").annotate(
         vote_count=Count("votes", distinct=True),
         link_count=Count("anonymous_sessions", distinct=True),
     )
+    if status in PollStatus.values:
+        polls = polls.filter(status=status)
+    polls = polls.order_by("-created_at")
+    page = Paginator(polls, 25).get_page(request.GET.get("page"))
+    polls_qs = page.object_list
     ok, problems = verify_chain()
     return render(request, "panel/dashboard.html", {
-        "polls": polls,
+        "polls": polls_qs,
+        "page_obj": page,
+        "status_filter": status,
+        "status_choices": PollStatus.choices,
         "chain_ok": ok,
         "chain_problems": problems[:5],
         "can_manage": _panel_gate(request),
         "stats": {
-            "total": polls.count(),
-            "active": polls.filter(status=PollStatus.ACTIVE).count(),
-            "votes": sum(p.vote_count for p in polls),
+            "total": polls.count() if not status else page.paginator.count,
+            "active": polls.filter(status=PollStatus.ACTIVE).count() if not status else "",
+            "votes": sum(p.vote_count for p in polls_qs),
         },
         "active_tab": "polls",
     })
@@ -168,6 +188,7 @@ def panel_poll_create(request):
             "description": form.cleaned_data["description"],
             "is_anonymous": form.cleaned_data["is_anonymous"],
             "allow_multiple_options": form.cleaned_data["allow_multiple_options"],
+            "results_visibility": form.cleaned_data.get("results_visibility") or "public",
             "start_at": form.cleaned_data["start_at"].isoformat(),
             "end_at": form.cleaned_data["end_at"].isoformat(),
             "options": [{"text": t, "order": i} for i, t in enumerate(lines)],
@@ -219,6 +240,7 @@ def panel_poll_update(request, poll_id):
             "description": form.cleaned_data["description"],
             "is_anonymous": form.cleaned_data["is_anonymous"],
             "allow_multiple_options": form.cleaned_data["allow_multiple_options"],
+            "results_visibility": form.cleaned_data.get("results_visibility") or "public",
             "start_at": form.cleaned_data["start_at"].isoformat(),
             "end_at": form.cleaned_data["end_at"].isoformat(),
             "status": form.cleaned_data["status"],
@@ -264,10 +286,45 @@ def panel_generate_link(request, poll_id):
         return render(request, "polls/error.html", {"heading": _("Not anonymous"), "message": _("Links can only be generated for anonymous polls.")}, status=400)
     if poll.is_finalized or not poll.is_open:
         return render(request, "polls/error.html", {"heading": _("Voting unavailable"), "message": _("Links can only be generated while the poll is open.")}, status=409)
-    session = AnonymousSession.objects.create_session(poll, ttl_hours=None)
-    log_event("session_generated", "Poll", str(poll.id), {"session_id": str(session.id), "expires_at": session.expires_at.isoformat()}, created_by=request.user)
-    vote_url = request.build_absolute_uri(reverse("poll-by-token", args=[session.token]))
-    return render(request, "panel/link.html", {"poll": poll, "session": session, "vote_url": vote_url})
+    try:
+        count = max(1, min(int(request.POST.get("count", 1)), 500))
+    except (TypeError, ValueError):
+        count = 1
+    sessions = [AnonymousSession.objects.create_session(poll, ttl_hours=None) for _ in range(count)]
+    for session in sessions:
+        log_event("session_generated", "Poll", str(poll.id), {"session_id": str(session.id), "expires_at": session.expires_at.isoformat()}, created_by=request.user)
+    if count == 1:
+        session = sessions[0]
+        vote_url = request.build_absolute_uri(reverse("poll-by-token", args=[session.token]))
+        return render(request, "panel/link.html", {"poll": poll, "session": session, "vote_url": vote_url})
+    # bulk: CSV download (token,url,expires) — no page with 500 links
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="evs_links_{poll.id}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["token", "url", "expires_at"])
+    for session in sessions:
+        writer.writerow([session.token, request.build_absolute_uri(reverse("poll-by-token", args=[session.token])), session.expires_at.isoformat()])
+    return response
+
+
+@require_GET
+def panel_poll_results_export(request, poll_id):
+    """GET /panel/polls/<id>/results/export/ — CSV protocol (tally + totals)."""
+    poll = get_object_or_404(Poll.objects.prefetch_related("options"), pk=poll_id)
+    if not _can_view_results(request.user):
+        return _login_redirect(request)
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="evs_results_{poll.id}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["poll", poll.title])
+    writer.writerow(["status", poll.status, "finalized_at", poll.finalized_at.isoformat() if poll.finalized_at else ""])
+    writer.writerow([])
+    writer.writerow(["option", "votes", "percent_of_voters"])
+    for row in _tally_with_percentages(poll):
+        writer.writerow([row["text"], row["n"], row["percent"]])
+    writer.writerow([])
+    writer.writerow(["total_valid_votes", poll.votes.filter(is_valid=True).count()])
+    return response
 
 
 @require_GET

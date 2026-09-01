@@ -1,13 +1,15 @@
 from django.contrib import admin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.urls import include, path
 from django.views.decorators.http import require_GET
 
 
 @require_GET
 def root_redirect(request):
-    """GET / — send browsers to the panel; anonymous users hit the login gate there."""
-    return redirect("panel-dashboard")
+    """GET / — landing for voters; admins click through to the panel."""
+    if "text/html" not in request.headers.get("Accept", ""):
+        return redirect("panel-dashboard")
+    return render(request, "polls/landing.html")
 
 
 urlpatterns = [

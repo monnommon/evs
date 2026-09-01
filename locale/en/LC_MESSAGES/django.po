@@ -529,3 +529,70 @@ msgstr ""
 #: templates/polls/vote.html:30
 msgid "JavaScript is required to prepare this anonymous ballot."
 msgstr ""
+
+msgid "Electronic voting"
+msgstr "Electronic voting"
+
+msgid "Electronic Voting System"
+msgstr "Electronic Voting System"
+
+msgid "Vote with a personal link"
+msgstr "Vote with a personal link"
+
+msgid "If you were invited to vote, open the link you received — no account or password needed."
+msgstr "If you were invited to vote, open the link you received — no account or password needed."
+
+msgid "By link"
+msgstr "By link"
+
+msgid "One vote"
+msgstr "One vote"
+
+msgid "Per link"
+msgstr "Per link"
+
+msgid "Audited"
+msgstr "Audited"
+
+msgid "Results"
+msgstr "Results"
+
+msgid "Your vote is sealed in an append-only audit chain. Ballot contents are never recorded in the audit log."
+msgstr "Your vote is sealed in an append-only audit chain. Ballot contents are never recorded in the audit log."
+
+msgid "Poll administrators sign in via the admin panel."
+msgstr "Poll administrators sign in via the admin panel."
+
+msgid "All statuses"
+msgstr "All statuses"
+
+msgid "Print protocol"
+msgstr "Print protocol"
+
+msgid "Results will be published here after the poll closes."
+msgstr "Results will be published here after the poll closes."
+
+msgid "Link count"
+msgstr "Link count"
+
+msgid "generate link(s)"
+msgstr "generate link(s)"
+
+msgid "Results visibility"
+msgstr "Results visibility"
+
+msgid "Export CSV"
+msgstr "Export CSV"
+
+msgid "Public"
+msgstr "Public"
+
+msgid "Hidden"
+msgstr "Hidden"
+
+msgid "Hidden: only Admin/Secretariat see results; public page returns 403."
+msgstr "Hidden: only Admin/Secretariat see results; public page returns 403."
+
+msgid "Your vote is anonymous and one-time — secured by this personal link."
+msgstr "Your vote is anonymous and one-time — secured by this personal link."
+

@@ -545,3 +545,70 @@ msgstr ""
 #: templates/polls/vote.html:30
 msgid "JavaScript is required to prepare this anonymous ballot."
 msgstr "Для подготовки анонимного бюллетеня требуется JavaScript."
+
+msgid "Electronic voting"
+msgstr "Электронное голосование"
+
+msgid "Electronic Voting System"
+msgstr "Система электронного голосования"
+
+msgid "Vote with a personal link"
+msgstr "Проголосуйте по персональной ссылке"
+
+msgid "If you were invited to vote, open the link you received — no account or password needed."
+msgstr "Если вас пригласили к голосованию, откройте полученную ссылку — регистрация и пароль не нужны."
+
+msgid "By link"
+msgstr "По ссылке"
+
+msgid "One vote"
+msgstr "Один голос"
+
+msgid "Per link"
+msgstr "На ссылку"
+
+msgid "Audited"
+msgstr "С аудитом"
+
+msgid "Results"
+msgstr "Результаты"
+
+msgid "Your vote is sealed in an append-only audit chain. Ballot contents are never recorded in the audit log."
+msgstr "Ваш голос зафиксирован в неизменяемой цепочке аудита. Содержимое бюллетеня в журнал аудита не записывается."
+
+msgid "Poll administrators sign in via the admin panel."
+msgstr "Администраторы опросов входят через панель управления."
+
+msgid "All statuses"
+msgstr "Все статусы"
+
+msgid "Print protocol"
+msgstr "Печать протокола"
+
+msgid "Results will be published here after the poll closes."
+msgstr "Результаты будут опубликованы здесь после закрытия опроса."
+
+msgid "Link count"
+msgstr "Количество ссылок"
+
+msgid "generate link(s)"
+msgstr "создать ссылку(и)"
+
+msgid "Results visibility"
+msgstr "Видимость результатов"
+
+msgid "Export CSV"
+msgstr "Экспорт CSV"
+
+msgid "Public"
+msgstr "Публичные"
+
+msgid "Hidden"
+msgstr "Скрытые"
+
+msgid "Hidden: only Admin/Secretariat see results; public page returns 403."
+msgstr "Скрытые: результаты видят только Admin/Secretariat; публичная страница отдаёт 403."
+
+msgid "Your vote is anonymous and one-time — secured by this personal link."
+msgstr "Ваш голос анонимен и одноразов — защищён персональной ссылкой."
+

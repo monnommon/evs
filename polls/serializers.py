@@ -23,22 +23,7 @@ class PollSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Poll
-        fields = [
-            "id",
-            "title",
-            "description",
-            "created_by",
-            "created_by_email",
-            "is_anonymous",
-            "allow_multiple_options",
-            "start_at",
-            "end_at",
-            "status",
-            "finalized_at",
-            "created_at",
-            "options",
-            "is_open",
-        ]
+        fields = ["id", "title", "description", "created_by", "created_by_email", "is_anonymous", "allow_multiple_options", "results_visibility", "start_at", "end_at", "status", "finalized_at", "created_at", "options", "is_open"]
         read_only_fields = ["id", "created_by", "created_by_email", "status", "finalized_at", "created_at"]
 
 
@@ -47,7 +32,7 @@ class PollCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Poll
-        fields = ["title", "description", "is_anonymous", "allow_multiple_options", "start_at", "end_at", "options"]
+        fields = ["title", "description", "is_anonymous", "allow_multiple_options", "results_visibility", "start_at", "end_at", "options"]
 
     def create(self, validated_data):
         options_data = validated_data.pop("options")
@@ -75,7 +60,7 @@ class PollUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Poll
-        fields = ["title", "description", "is_anonymous", "allow_multiple_options", "start_at", "end_at", "status"]
+        fields = ["title", "description", "is_anonymous", "allow_multiple_options", "results_visibility", "start_at", "end_at", "status"]
 
     def validate_status(self, value):
         if value not in ("draft", "active"):
@@ -133,6 +118,10 @@ class AnonymousSessionSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         base = request.build_absolute_uri("/") if request else ""
         return f"{base.rstrip('/')}/poll/{obj.token}"
+
+
+class GenerateLinkSerializer(serializers.Serializer):
+    ttl_hours = serializers.IntegerField(min_value=1, required=False)
 
 
 class PollResultsSerializer(serializers.Serializer):

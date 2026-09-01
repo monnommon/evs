@@ -6,6 +6,10 @@
 <div class="card" data-testid="panel-results">
   <p class="eyebrow">{% trans "Live tally" %}</p>
   <h1>{{ poll.title }} — {% trans "results" %}</h1>
+  <div class="form-actions no-print">
+    <button type="button" class="btn btn-secondary" onclick="window.print()">{% trans "Print protocol" %}</button>
+    <a class="btn btn-secondary" href="/panel/polls/{{ poll.id }}/results/export/">{% trans "Export CSV" %}</a>
+  </div>
   {% for row in tally %}
   <div class="tally-item" data-testid="tally-row">
     <div class="tally-row"><span>{{ row.text }}</span><strong>{{ row.n }} <small>({{ row.percent }}%)</small></strong></div>

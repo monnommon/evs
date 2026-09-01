@@ -10,6 +10,17 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key-change-me")
 DEBUG = os.environ.get("DEBUG", "false").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
+# Production hardening (docker-compose requires SECRET_KEY/DB_PASSWORD/ALLOWED_HOSTS).
+# SECURE_SSL_REDIRECT stays off by default: the bundled nginx terminates plain
+# HTTP; enable it when a TLS proxy sits in front (see README, Security notes).
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "false").lower() in ("1", "true", "yes")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -105,6 +116,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    "DEFAULT_THROTTLE_RATES": {"auth": "30/min", "vote": "120/min", "user": "120/min"},
 }
 
 SIMPLE_JWT = {
@@ -126,7 +138,7 @@ LANGUAGES = [
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
 
-TIME_ZONE = "UTC"
+TIME_ZONE = os.environ.get("TIME_ZONE", "Europe/Moscow")
 USE_I18N = True
 USE_TZ = True
 
@@ -144,3 +156,10 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "true").lower() in ("1", "true", "yes")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "evs-noreply@example.com")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost")
+
+# Identified voting: allow self-registration? Set to false when voters are
+# invited/administered (registration then returns 403; admins create accounts
+# via Django admin at /admin/). Email verification is NOT implemented — with
+# open registration anyone with the URL can register and vote in identified
+# polls.
+REGISTRATION_OPEN = os.environ.get("REGISTRATION_OPEN", "true").lower() in ("1", "true", "yes")

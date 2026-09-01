@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:15-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: evs
       POSTGRES_USER: evs
@@ -14,6 +15,7 @@ services:
 
   web:
     build: .
+    restart: unless-stopped
     command: >
       sh -c "mkdir -p /app/staticfiles &&
              python manage.py migrate --noinput &&
@@ -26,9 +28,10 @@ services:
       retries: 5
       start_period: 30s
     environment:
-      DATABASE_URL: postgresql://evs:${DB_PASSWORD:-evsdev}@db:5432/evs
-      SECRET_KEY: ${SECRET_KEY:-django-insecure-change-me-in-prod}
+      DATABASE_URL: postgresql://evs:${DB_PASSWORD:?DB_PASSWORD is required}@db:5432/evs
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
       DEBUG: ${DEBUG:-false}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?ALLOWED_HOSTS is required}
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +40,7 @@ services:
 
   nginx:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
