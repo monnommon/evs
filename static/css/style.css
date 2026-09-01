@@ -19,9 +19,10 @@
 
 /* Layout */
 main { width: min(1100px, 100% - 2rem); margin-inline: auto; }
-.card { padding: clamp(1.25rem, 4vw, 2rem); margin-bottom: 1.25rem; }
+.card { padding: clamp(1.25rem, 4vw, 2rem); margin-bottom: 1.25rem; background: var(--pico-card-background-color); border: 1px solid var(--pico-card-border-color); border-radius: var(--pico-border-radius); box-shadow: var(--pico-card-box-shadow); }
 .login-card, .ballot-card { max-width: 660px; margin-inline: auto; }
 .login-card { max-width: 460px; }
+.table-wrap { width: 100%; overflow-x: auto; }
 
 /* Top navigation */
 .topnav {
@@ -62,11 +63,9 @@ h2 { margin-top: 2rem; font-size: 1.25rem; }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; white-space: nowrap; }
 table td { vertical-align: middle; }
 
-/* Stats grid on landing */
+/* Stats grid on landing and dashboard */
 .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin: 0 0 1.25rem; }
-.stat { padding: 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 12px; }
-.stat span { display: block; color: var(--pico-muted-color); font-size: .78rem; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; }
-.stat strong { display: block; margin-top: .2rem; font-size: 1.5rem; }
+.stat span { color: var(--pico-muted-color); font-size: .78rem; font-weight: 650; text-transform: uppercase; letter-spacing: .05em; }
 
 /* Ballot options */
 .choice-group { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
@@ -102,13 +101,33 @@ table td { vertical-align: middle; }
 .btn-quiet:hover { color: var(--pico-primary-hover); background: transparent; text-decoration: underline; }
 .actions button, .actions .btn-quiet, .actions select, .actions input[type="number"] { margin-bottom: 0; width: auto; min-height: auto; }
 
+/* Link-buttons that Pico doesn't style (it only styles <button>) */
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: .58rem 1rem; border: 1px solid transparent; border-radius: var(--pico-border-radius); background: var(--pico-primary); color: #fff; cursor: pointer; font-size: .9rem; font-weight: 700; text-decoration: none; width: auto; margin-bottom: 0; }
+.btn:hover { background: var(--pico-primary-hover); color: #fff; }
+.btn-secondary { border-color: var(--pico-border-color); background: var(--pico-card-background-color); color: var(--pico-color); }
+.btn-secondary:hover { background: var(--pico-background-color); color: var(--pico-color); }
+.btn-block { width: 100%; }
+/* Pico makes submit buttons width:100% — keep form footers and inline forms compact */
+.form-actions button[type="submit"], .form-actions > button { width: auto; margin-bottom: 0; }
+button[type="submit"] { width: 100%; } /* ballot/standalone primary action stays full-width */
+.login-card button[type="submit"], .card > form > .form-actions button { width: auto; }
+
 /* Forms */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.05rem; }
 .field { display: flex; min-width: 0; flex-direction: column; gap: .36rem; margin-bottom: 0; }
+.field-wide { grid-column: 1 / -1; }
 .field label { font-weight: 700; margin-bottom: 0; }
-.field-hint { color: var(--pico-muted-color); font-size: .78rem; }
-.form-actions { display: flex; justify-content: flex-end; gap: .65rem; }
+.field-hint { color: var(--pico-muted-color); font-size: .78rem; margin-top: .2rem; }
+.errorlist { margin: 0; padding-left: 1rem; color: #b4233c; font-size: .8rem; }
+.form-actions { display: flex; justify-content: flex-end; align-items: center; gap: .65rem; }
 form.inline, .actions form { margin-bottom: 0; }
+/* Dashboard heading: filter + button on one row */
+.page-heading .actions { gap: .65rem; }
+.page-heading .actions select { width: auto; min-height: auto; margin-bottom: 0; }
+/* Dashboard stats (span+strong on one row in the card, block per stat tile) */
+.stat { padding: 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: 12px; }
+.stat span { display: block; margin-bottom: .15rem; }
+.stat strong { display: block; font-size: 1.5rem; }
 
 /* Flash messages */
 .flash { padding: .75rem .9rem; border-radius: 9px; margin: .8rem 0; }
