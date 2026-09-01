@@ -30,3 +30,8 @@ input[type="text"], input[type="email"], input[type="password"], input[type="dat
 }
 textarea { min-height: 6rem; }
 form p label { display: inline-block; margin-top: 0.35rem; }
+#lang-switcher { margin-left: auto; display: flex; align-items: center; gap: 0.3rem; }
+#lang-switcher .lang-btn { background: transparent; color: #cfd8ff; border: 0; padding: 0.15rem 0.45rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+#lang-switcher .lang-btn:hover { color: #fff; }
+#lang-switcher .lang-btn.active { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+#lang-switcher .lang-sep { color: #6b7280; font-size: 0.8rem; }

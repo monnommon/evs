@@ -13,6 +13,7 @@ from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import Role
@@ -41,7 +42,7 @@ def poll_results(request, poll_id):
     """GET /polls/<id>/results/ — results page; only for closed polls."""
     poll = get_object_or_404(Poll.objects.prefetch_related("options"), pk=poll_id)
     if not poll.is_finalized and poll.status != PollStatus.CLOSED:
-        return render(request, "polls/error.html", {"heading": "Not available", "message": "Results are available after the poll closes."}, status=403)
+        return render(request, "polls/error.html", {"heading": _("Not available"), "message": _("Results are available after the poll closes.")}, status=403)
     tally = list(poll.options.annotate(n=Count("votes", filter=Q(votes__is_valid=True))).values("id", "text", "order", "n"))
     return render(
         request,
@@ -72,7 +73,7 @@ def panel_login(request):
     password = request.POST.get("password") or ""
     user = authenticate(request, email=email, password=password)
     if user is None or not _can_view_results(user):
-        return render(request, "panel/login.html", {"error": "Invalid credentials or insufficient role."}, status=401)
+        return render(request, "panel/login.html", {"error": _("Invalid credentials or insufficient role.")}, status=401)
     login(request, user)
     return redirect("panel-dashboard")
 
@@ -89,13 +90,13 @@ class PollForm(forms.Form):
     allow_multiple_options = forms.BooleanField(required=False)
     start_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
     end_at = forms.DateTimeField(widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    options_text = forms.CharField(widget=forms.Textarea, help_text="One option per line.")
+    options_text = forms.CharField(widget=forms.Textarea, help_text=_("One option per line."))
     status = forms.ChoiceField(choices=[("draft", "Draft"), ("active", "Active")], initial="draft")
 
     def clean_options_text(self):
         lines = [ln.strip() for ln in (self.cleaned_data["options_text"] or "").splitlines() if ln.strip()]
         if len(lines) < 2:
-            raise forms.ValidationError("A poll needs at least two options.")
+            raise forms.ValidationError(_("A poll needs at least two options."))
         return lines
 
 
@@ -155,7 +156,7 @@ def panel_poll_create(request):
             poll = serializer.save(created_by=request.user)
             log_event("poll_created", "Poll", str(poll.id), {"title": poll.title, "is_anonymous": poll.is_anonymous}, created_by=request.user)
             return redirect("panel-dashboard")
-    return render(request, "panel/poll_form.html", {"form": form, "poll": None, "error": "Check the form fields."}, status=400)
+    return render(request, "panel/poll_form.html", {"form": form, "poll": None, "error": _("Check the form fields.")}, status=400)
 
 
 @require_GET
@@ -174,7 +175,7 @@ def panel_poll_update(request, poll_id):
     if not _panel_gate(request):
         return _login_redirect(request)
     if poll.is_finalized:
-        return render(request, "polls/error.html", {"heading": "Immutable", "message": "Poll is finalized and immutable."}, status=409)
+        return render(request, "polls/error.html", {"heading": _("Immutable"), "message": _("Poll is finalized and immutable.")}, status=409)
     form = PollForm(request.POST)
     if form.is_valid():
         lines = form.cleaned_data["options_text"]
@@ -194,7 +195,7 @@ def panel_poll_update(request, poll_id):
                 Option.objects.bulk_create([Option(poll=poll, text=t, order=i) for i, t in enumerate(lines)])
             log_event("poll_updated", "Poll", str(poll.id), {"fields": sorted(data.keys())}, created_by=request.user)
             return redirect("panel-dashboard")
-    return render(request, "panel/poll_form.html", {"form": form, "poll": poll, "error": "Check the form fields."}, status=400)
+    return render(request, "panel/poll_form.html", {"form": form, "poll": poll, "error": _("Check the form fields.")}, status=400)
 
 
 @require_POST
@@ -219,7 +220,7 @@ def panel_generate_link(request, poll_id):
     if not _panel_gate(request):
         return _login_redirect(request)
     if not poll.is_anonymous:
-        return render(request, "polls/error.html", {"heading": "Not anonymous", "message": "Links can only be generated for anonymous polls."}, status=400)
+        return render(request, "polls/error.html", {"heading": _("Not anonymous"), "message": _("Links can only be generated for anonymous polls.")}, status=400)
     session = AnonymousSession.objects.create_session(poll, ttl_hours=None)
     log_event("session_generated", "Poll", str(poll.id), {"session_id": str(session.id), "expires_at": session.expires_at.isoformat()}, created_by=request.user)
     return render(request, "panel/link.html", {"poll": poll, "session": session})
@@ -245,7 +246,7 @@ def panel_poll_delete(request, poll_id):
         return _login_redirect(request)
     poll = get_object_or_404(Poll, pk=poll_id)
     if poll.is_finalized or poll.votes.exists():
-        return render(request, "polls/error.html", {"heading": "Cannot delete", "message": "Poll with votes or finalized results cannot be deleted."}, status=409)
+        return render(request, "polls/error.html", {"heading": _("Cannot delete"), "message": _("Poll with votes or finalized results cannot be deleted.")}, status=409)
     log_event("poll_updated", "Poll", str(poll.id), {"deleted": True, "title": poll.title}, created_by=request.user)
     poll.delete()
     return redirect("panel-dashboard")

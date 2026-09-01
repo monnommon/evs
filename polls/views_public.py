@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
 
@@ -46,13 +47,13 @@ def _is_form_post(request):
 def _anon_vote_error(session, poll, now):
     """Shared refusal checks for anonymous voting (JSON API and HTML form)."""
     if session.is_expired or poll.end_at < now:
-        return ("This voting link has expired.", status.HTTP_410_GONE)
+        return (_("This voting link has expired."), status.HTTP_410_GONE)
     if poll.is_finalized:
-        return ("Poll is finalized; no more votes.", status.HTTP_409_CONFLICT)
+        return (_("Poll is finalized; no more votes."), status.HTTP_409_CONFLICT)
     if poll.status != PollStatus.ACTIVE or not (poll.start_at <= now <= poll.end_at):
-        return ("Poll is not open for voting.", status.HTTP_409_CONFLICT)
+        return (_("Poll is not open for voting."), status.HTTP_409_CONFLICT)
     if session.used:
-        return ("This link has already been used.", status.HTTP_409_CONFLICT)
+        return (_("This link has already been used."), status.HTTP_409_CONFLICT)
     return None
 
 
@@ -75,12 +76,12 @@ class PollByTokenView(views.APIView):
         session = AnonymousSession.objects.filter(token=token).select_related("poll").first()
         if session is None:
             if _wants_html(request):
-                return render(request, "polls/error.html", {"heading": "Link not found", "message": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
+                return render(request, "polls/error.html", {"heading": _("Link not found"), "message": _("Invalid voting link.")}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
         poll = session.poll
         if session.is_expired or (session.expires_at and poll.end_at < timezone.now()):
             if _wants_html(request):
-                return render(request, "polls/error.html", {"heading": "Link expired", "message": "This voting link has expired."}, status=status.HTTP_410_GONE)
+                return render(request, "polls/error.html", {"heading": _("Link expired"), "message": _("This voting link has expired.")}, status=status.HTTP_410_GONE)
             return Response({"detail": "This voting link has expired."}, status=status.HTTP_410_GONE)
         if _wants_html(request):
             if session.used:
@@ -112,7 +113,7 @@ class AnonymousVoteView(views.APIView):
         html = _is_form_post(request)
         if session is None:
             if html:
-                return render(request, "polls/error.html", {"heading": "Link not found", "message": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
+                return render(request, "polls/error.html", {"heading": _("Link not found"), "message": _("Invalid voting link.")}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
         poll = session.poll
         err = _anon_vote_error(session, poll, timezone.now())
@@ -129,13 +130,13 @@ class AnonymousVoteView(views.APIView):
             option_ids = request.data.get("option_ids")
         fingerprint_hash = hashlib.sha256(fingerprint.encode("utf-8")).hexdigest() if fingerprint else None
         if fingerprint_hash is None:
-            msg = "Browser fingerprint is required for anonymous voting."
+            msg = _("Browser fingerprint is required for anonymous voting.")
             if html:
                 return _render_ballot(request, poll, session, token, msg, status.HTTP_400_BAD_REQUEST)
             return Response({"detail": msg}, status=status.HTTP_400_BAD_REQUEST)
 
         if Vote.objects.filter(poll=poll, fingerprint_hash=fingerprint_hash).exists():
-            msg = "A vote with this browser already exists."
+            msg = _("A vote with this browser already exists.")
             if html:
                 return _render_ballot(request, poll, session, token, msg, status.HTTP_409_CONFLICT)
             return Response({"detail": msg}, status=status.HTTP_409_CONFLICT)
@@ -173,7 +174,7 @@ class AnonymousConfirmView(views.APIView):
         session = AnonymousSession.objects.filter(token=token).select_related("poll").first()
         if session is None:
             if _wants_html(request):
-                return render(request, "polls/error.html", {"heading": "Link not found", "message": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
+                return render(request, "polls/error.html", {"heading": _("Link not found"), "message": _("Invalid voting link.")}, status=status.HTTP_404_NOT_FOUND)
             return Response({"detail": "Invalid voting link."}, status=status.HTTP_404_NOT_FOUND)
         vote = session.votes.select_related("poll").first()
         if _wants_html(request):

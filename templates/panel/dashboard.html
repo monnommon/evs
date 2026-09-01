@@ -1,48 +1,49 @@
 {% extends "base.html" %}
-{% block title %}Admin dashboard{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Admin dashboard" %}{% endblock %}
 {% block nav %}
-<a href="/panel/" class="active">Polls</a>
-<a href="/panel/users/">Users</a>
-<a href="/panel/logout/">Log out</a>
+<a href="/panel/" class="active">{% trans "Polls" %}</a>
+<a href="/panel/users/">{% trans "Users" %}</a>
+<a href="/panel/logout/">{% trans "Log out" %}</a>
 {% endblock %}
 {% block content %}
 <div class="card" data-testid="panel-dashboard">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <h1>Polls</h1>
-    <a class="btn" href="/panel/polls/new/">New poll</a>
+    <h1>{% trans "Polls" %}</h1>
+    <a class="btn" href="/panel/polls/new/">{% trans "New poll" %}</a>
   </div>
   {% if chain_ok %}
-  <p class="flash ok" data-testid="audit-indicator">Audit chain verified — all entries intact.</p>
+  <p class="flash ok" data-testid="audit-indicator">{% trans "Audit chain verified — all entries intact." %}</p>
   {% else %}
-  <p class="flash err" data-testid="audit-indicator">Audit chain BROKEN — {{ chain_problems|length }} problem(s) detected.</p>
+  <p class="flash err" data-testid="audit-indicator">{% blocktrans count counter=chain_problems|length %}Audit chain BROKEN — 1 problem detected.{% plural %}Audit chain BROKEN — {{ counter }} problems detected.{% endblocktrans %}</p>
   {% endif %}
   <table>
-    <thead><tr><th>Title</th><th>Status</th><th>Anonymous</th><th>Ends</th><th>Links</th><th>Actions</th></tr></thead>
+    <thead><tr><th>{% trans "Title" %}</th><th>{% trans "Status" %}</th><th>{% trans "Anonymous" %}</th><th>{% trans "Ends" %}</th><th>{% trans "Links" %}</th><th>{% trans "Actions" %}</th></tr></thead>
     <tbody>
       {% for poll in polls %}
       <tr data-testid="poll-row">
         <td>{{ poll.title }}</td>
-        <td>{{ poll.status }}{% if poll.is_finalized %} (finalized){% endif %}</td>
-        <td>{{ poll.is_anonymous|yesno:"yes,no" }}</td>
+        <td>{{ poll.status }}{% if poll.is_finalized %} ({% trans "finalized" %}){% endif %}</td>
+        <td>{{ poll.is_anonymous|yesno:_("yes,no") }}</td>
         <td>{{ poll.end_at }}</td>
         <td>{{ poll.anonymous_sessions.count }}</td>
         <td>
-          <a href="/panel/polls/{{ poll.id }}/edit/">edit</a>
-          <a href="/panel/polls/{{ poll.id }}/results/">results</a>
+          <a href="/panel/polls/{{ poll.id }}/edit/">{% trans "edit" %}</a>
+          <a href="/panel/polls/{{ poll.id }}/results/">{% trans "results" %}</a>
           {% if not poll.is_finalized %}
           <form method="post" action="/panel/polls/{{ poll.id }}/finalize/" style="display:inline" data-testid="finalize-form">
-            {% csrf_token %}<button type="submit">finalize</button>
+            {% csrf_token %}<button type="submit">{% trans "finalize" %}</button>
           </form>
           {% endif %}
           {% if poll.is_anonymous %}
           <form method="post" action="/panel/polls/{{ poll.id }}/generate-link/" style="display:inline" data-testid="generate-link-form">
-            {% csrf_token %}<button type="submit">generate link</button>
+            {% csrf_token %}<button type="submit">{% trans "generate link" %}</button>
           </form>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="muted">No polls yet — create the first one.</td></tr>
+      <tr><td colspan="6" class="muted">{% trans "No polls yet — create the first one." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Users &amp; roles{% endblock %}
-{% block nav %}<a href="/panel/">Polls</a><a href="/panel/users/" class="active">Users</a><a href="/panel/logout/">Log out</a>{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Users &amp; roles" %}{% endblock %}
+{% block nav %}<a href="/panel/">{% trans "Polls" %}</a><a href="/panel/users/" class="active">{% trans "Users" %}</a><a href="/panel/logout/">{% trans "Log out" %}</a>{% endblock %}
 {% block content %}
 <div class="card" data-testid="panel-users">
-  <h1>Users &amp; roles</h1>
+  <h1>{% trans "Users &amp; roles" %}</h1>
   <table>
-    <thead><tr><th>Email</th><th>Role</th><th>Change role</th></tr></thead>
+    <thead><tr><th>{% trans "Email" %}</th><th>{% trans "Role" %}</th><th>{% trans "Change role" %}</th></tr></thead>
     <tbody>
       {% for u in users %}
       <tr data-testid="user-row">
@@ -19,12 +20,12 @@
               <option value="{{ role.id }}" {% if u.role and u.role.id == role.id %}selected{% endif %}>{{ role.name }}</option>
               {% endfor %}
             </select>
-            <button type="submit">Set</button>
+            <button type="submit">{% trans "Set" %}</button>
           </form>
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="3" class="muted">No users yet.</td></tr>
+      <tr><td colspan="3" class="muted">{% trans "No users yet." %}</td></tr>
       {% endfor %}
     </tbody>
   </table>

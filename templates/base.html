@@ -1,5 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}<!DOCTYPE html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="utf-8">
   <title>{% block title %}EVS{% endblock %}</title>
@@ -14,9 +15,16 @@
     <a href="/" class="brand">EVS</a>
     <div id="nav-links">
       {% block nav %}
-      <a href="/panel/">Admin panel</a>
+      <a href="/panel/">{% trans "Admin panel" %}</a>
       {% endblock %}
     </div>
+    <form id="lang-switcher" method="post" action="{% url 'set_language' %}">
+      {% csrf_token %}
+      <input name="next" type="hidden" value="{{ request.get_full_path }}">
+      <button type="submit" name="language" value="ru" class="lang-btn{% if LANGUAGE_CODE == 'ru' %} active{% endif %}">RU</button>
+      <span class="lang-sep">|</span>
+      <button type="submit" name="language" value="en" class="lang-btn{% if LANGUAGE_CODE == 'en' %} active{% endif %}">EN</button>
+    </form>
   </nav>
   <main>
     {% block content %}{% endblock %}
